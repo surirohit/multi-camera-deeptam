@@ -128,6 +128,7 @@ def display_response(response, display_surf, camera_outputs,
             continue
         img = sensor_data[obs]['data']
         img_viz = sensor_data[obs].get('data_viz')
+        # pdb.set_trace()
         if obs == 'depth': # TODO: this is the place where we need to calculate TOF
             # depth central crop
             if save_toc:
@@ -147,6 +148,7 @@ def display_response(response, display_surf, camera_outputs,
             if save_toc:
                 # Clip
                 img = np.clip(img, 0 , MAX_DEPTH_SENSOR)
+                #changed
                 height, width = img.shape[0], img.shape[1]
                 crop_d_img = img[height//2 - patch_len//2: height//2 + patch_len//2,
                                   width//2 - patch_len//2: width//2 + patch_len//2]
@@ -202,7 +204,7 @@ def write_text(display_surf, text, position, font=None, fontname='monospace', fo
     fontname-> string having the name of the font.
     fontsize -> int, size of the font.
     color -> tuple, adhering to the color format in pygame.
-    position -> tuple (x,y) coordinate of text object.
+    position -> tuple (x,y) coordinate of text object.args.height
     """
 
     font_object = font if font is not None else pygame.font.SysFont(fontname, fontsize)
@@ -327,6 +329,7 @@ def interactive_loop(sim, args):
     scene_dataset = args.scene.dataset
 
     init_time = timer()
+    increment=0
     num_frames = 0
     prev_key = ''
     replay = args.replay
@@ -402,6 +405,7 @@ def interactive_loop(sim, args):
                 if replay_auto or unprocessed_keypressed:
                     # get next action and do it
                     rec = action_trace.next_action_record()
+
                     if rec is None:
                         break
                         # go to next trace
@@ -451,7 +455,7 @@ def interactive_loop(sim, args):
                 actions = [action]
 
         # step simulator and get observation
-        action_repeat = 2
+        action_repeat = 1
 
         response = sim.step(actions, action_repeat)
         if response is None:
@@ -494,6 +498,9 @@ def interactive_loop(sim, args):
             cv2.imwrite(right_frame_fname,
                         cv2.cvtColor(right_image, cv2.COLOR_RGB2BGR))
             tocs.append(toc)
+
+            timestamp.append(increment)
+            increment=increment+1
             performed_actions.append(convert_to_number(last_good_action))
             agent_states.append(convert_to_vector(response['info']['agent_state']))
             prev_toc = toc
@@ -512,10 +519,11 @@ def interactive_loop(sim, args):
 
     # save tocs if necessary
     if args.save_toc:
-        concatenated_array = np.array([tocs, performed_actions]).T
+        # concatenated_array = np.array([tocs, performed_actions]).T
+        concatenated_array = np.array([timestamp]).T
         concatenated_array = np.concatenate((concatenated_array, np.array(agent_states)), axis=1)
         np.savetxt(toc_file, concatenated_array, fmt='%.3f',
-                   header=" Toc, action, tx, ty, tz, qx, qy, qz, qw")
+                   header=" Timestamps tx, ty, tz, qx, qy, qz, qw")
         print("Saved {} images".format(len(tocs)))
 
     # cleanup and quit
@@ -547,16 +555,17 @@ def convert_to_vector(agent_state):
     position = agent_state['position']
     orientation = agent_state['orientation']
     yaw=np.arctan2(orientation[0],orientation[2])
+    rotatedposition=[-1*position[2],-1*position[0],position[1]]
 
     # quat=quat[0]
-    # print("yaw ={}".format(yaw))
+    print("pos ={}".format(rotatedposition))
     quat=([0,0,0,0])
     quat[3]=np.cos(yaw/2.0)
-    quat[1]=np.sin(yaw/2.0)
+    quat[2]=np.sin(yaw/2.0)
     # pdb.set_trace()
-    # print("quat ={}".format(quat))
+    print("quat ={}".format(quat))
     # Returns concatenated vector
-    return position + quat
+    return rotatedposition + quat
 
 def main():
     global VIDEO_WRITER
