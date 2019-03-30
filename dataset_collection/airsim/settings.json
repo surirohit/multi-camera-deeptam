@@ -10,7 +10,7 @@
   "EnableCollisionPassthrogh": true,
   "CameraDefaults": {
     "CaptureSettings": [
-        {
+      {
         "ImageType": 0,
         "Width": 640,
         "Height": 360,
@@ -64,8 +64,23 @@
     ]
   },
   "SubWindows": [
-    {"WindowID": 0, "CameraID": 2, "ImageType": 0, "Visible": true},
-    {"WindowID": 1, "CameraID": 1, "ImageType": 0, "Visible": true},
-    {"WindowID": 2, "CameraID": 2, "ImageType": 3, "Visible": true}
+    {
+      "WindowID": 0,
+      "CameraID": 2,
+      "ImageType": 0,
+      "Visible": true
+    },
+    {
+      "WindowID": 1,
+      "CameraID": 1,
+      "ImageType": 0,
+      "Visible": true
+    },
+    {
+      "WindowID": 2,
+      "CameraID": 2,
+      "ImageType": 3,
+      "Visible": true
+    }
   ]
 }

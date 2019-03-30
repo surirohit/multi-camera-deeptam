@@ -2,11 +2,14 @@ import airsim
 import math
 import numpy as np
 import sys
+
 sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 
+
 def printUsage():
     print("[ERROR] Usage: " + str(sys.argv[0] + " [input_pfm_file] [output_png_file]"))
+
 
 if (len(sys.argv) != 3):
     printUsage()
