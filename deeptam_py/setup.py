@@ -23,7 +23,6 @@ from setuptools import setup, find_packages
 
 # Minimum dependencies required prior to installation
 INSTALL_REQUIRES = [
-    'pylint',
     'minieigen',
     'numpy',
     'scipy',
@@ -32,19 +31,12 @@ INSTALL_REQUIRES = [
     'tensorflow-gpu==1.9.0'
 ]
 
-
-# Helper scripts provided by this package
-SCRIPTS = [
-    'bin/single_camera_tracking.py'
-]
-
 # Installation operation
 setup(name='deeptam_tracker',
       version='0.0.0',
       description='Tracking and Mapping using Deep Learning',
       keywords=["robotics", "machine learning", "visual odometry"],
       packages=[package for package in find_packages() if package.startswith('deeptam')],
-      scripts=SCRIPTS,
       install_requires=INSTALL_REQUIRES,
       zip_safe=False)
 

@@ -31,8 +31,10 @@ function install_python_deps()
 
   # Create the virtualenv for tensorflow (called deeptam_py)
   VIRTUALENV_NAME=deeptam_py
+  echo "Creating Virtual Environment: ${VIRTUALENV_NAME}"
+  echo "==============================================="
   rm -rf "$WORKON_HOME/$VIRTUALENV_NAME"
-  mkvirtualenv --no-site-packages --python=python3 $VIRTUALENV_NAME || true
+  virtualenv --no-site-packages --python=python3 $VIRTUALENV_NAME || true
 
   # Activate virtualenv and update pip
   source $HOME/.bashrc
@@ -56,7 +58,8 @@ UBUNTU_VERSION=$( lsb_release -r | awk '{ print $2 }' )
 
 ### Install dependencies depending on the version of Ubuntu
 if [[ "$UBUNTU_VERSION" == "16.04" ]]; then
-  install_system_deps_ubuntu_1604
+#  install_system_deps_ubuntu_1604
+  echo "Already installed stuff!"
 else
   echo "Error: Unknown or unsupported Linux distribution."
   exit
@@ -65,9 +68,9 @@ fi
 ### Install common Python dependencies
 install_python_deps
 
-## Install Noesis
+## Install DeepTAM
 
-### Add environment variable for NOESIS_ROOT
+### Add environment variable for DEEPTAM_ROOT
 DEEPTAM_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 sed -i "/\b\DEEPTAM_ROOT\\b/d" $HOME/.bashrc
 printf 'export DEEPTAM_ROOT='$DEEPTAM_ROOT'\n' >> $HOME/.bashrc
