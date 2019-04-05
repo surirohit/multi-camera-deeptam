@@ -80,7 +80,7 @@ source $HOME/.bashrc
 ### Install the lmbdspecial ops submodule
 git submodule init
 git submodule update
-LMBSPECIALOPS_ROOT=$DEEPTAM_ROOT/deeptam_py/lmbspecialops
+LMBSPECIALOPS_ROOT=$DEEPTAM_ROOT/lib/lmbspecialops
 cd $LMBSPECIALOPS_ROOT
 #### change compiler version
 CC=gcc-4.9
@@ -94,8 +94,8 @@ make
 #### add to path of virtual environment
 add2virtualenv $LMBSPECIALOPS_ROOT/python
 
-### Install the noesis_py python-package
-cd deeptam_py
+### Install the python-packages
+cd lib
 pip install -e .
 
 exit

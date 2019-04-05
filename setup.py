@@ -32,11 +32,11 @@ INSTALL_REQUIRES = [
 ]
 
 # Installation operation
-setup(name='deeptam_tracker',
+setup(name='deeptam',
       version='0.0.0',
       description='Tracking and Mapping using Deep Learning',
       keywords=["robotics", "machine learning", "visual odometry"],
-      packages=[package for package in find_packages() if package.startswith('deeptam')],
+      packages=[package for package in find_packages()],
       install_requires=INSTALL_REQUIRES,
       zip_safe=False)
 
