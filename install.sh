@@ -15,7 +15,6 @@ function install_system_deps_ubuntu_1604()
 
   ## Install python3
   sudo apt install $APT_GET_FLAGS python3-dev python3-pip
-  sudo pip install --upgrade pip
 }
 
 function install_python_deps()
@@ -33,7 +32,7 @@ function install_python_deps()
   # Create the virtualenv for tensorflow (called deeptam_py)
   VIRTUALENV_NAME=deeptam_py
   rm -rf "$WORKON_HOME/$VIRTUALENV_NAME"
-  mkvirtualenv --python=python3 $VIRTUALENV_NAME || true
+  mkvirtualenv --no-site-packages --python=python3 $VIRTUALENV_NAME || true
 
   # Activate virtualenv and update pip
   source $HOME/.bashrc
@@ -49,7 +48,6 @@ function install_python_deps()
 
 ### Back-up the local BASH configuration file
 cp $HOME/.bashrc $HOME/.bashrc.backup
-
 
 ## Install dependencies
 
@@ -75,12 +73,11 @@ sed -i "/\b\DEEPTAM_ROOT\\b/d" $HOME/.bashrc
 printf 'export DEEPTAM_ROOT='$DEEPTAM_ROOT'\n' >> $HOME/.bashrc
 bash
 source $HOME/.bashrc
-workon deeptam_py
 
 ### Install the lmbdspecial ops submodule
 git submodule init
 git submodule update
-$LMBSPECIALOPS_ROOT=$DEEPTAM_ROOT/deeptam_py/lmbspecialops
+LMBSPECIALOPS_ROOT=$DEEPTAM_ROOT/deeptam_py/lmbspecialops
 cd $LMBSPECIALOPS_ROOT
 #### change compiler version
 CC=gcc-4.9

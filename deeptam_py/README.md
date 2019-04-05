@@ -8,7 +8,7 @@ __NOTE:__
 git clone -b deeptam https://github.com/Mayankm96/lmbspecialops
 ```
 
-The remaining setup instructions are the same. A `setup.py` script has been added to configure the virtual environemnt. It install TensforFlow 1.9. instead of TensorFlow 1.4:
+* The remaining setup instructions are the same. A `setup.py` script has been added to configure the virtual environemnt. It install TensforFlow 1.9. instead of TensorFlow 1.4:
 ```bash
 pip install -e .
 ```
