@@ -97,6 +97,7 @@ def display_response(response, display_surf, camera_outputs,
     measurements = observation.get('measurements')
     # Time of contact initialized only if needed
     toc = None
+    timestamp = None
     depth_img = None
     right_image = None
     rightdepth_img = None
@@ -230,6 +231,7 @@ def interactive_loop(sim, args):
 
     if args.save_toc:
         tocs = []
+        timestamp = []
         performed_actions = []
         agent_states = []
         last_good_action = 'idle'
@@ -384,7 +386,7 @@ def interactive_loop(sim, args):
                 sim.episode_info = sim.reset()
         else:
             # Figure out action
-            action = {'name': 'idle', 'strength': 1, 'angle': math.radians(5)}
+            action = {'name': 'idle', 'strength': 10, 'angle': math.radians(5)}
             actions = []
             action_names = []
             if replay:
@@ -498,7 +500,6 @@ def interactive_loop(sim, args):
             cv2.imwrite(right_frame_fname,
                         cv2.cvtColor(right_image, cv2.COLOR_RGB2BGR))
             tocs.append(toc)
-
             timestamp.append(increment)
             increment=increment+1
             performed_actions.append(convert_to_number(last_good_action))
