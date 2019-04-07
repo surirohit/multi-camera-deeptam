@@ -1,0 +1,3 @@
+[submodule "lib/lmbspecialops"]
+	path = lib/lmbspecialops
+	url = git@github.com:Mayankm96/lmbspecialops.git

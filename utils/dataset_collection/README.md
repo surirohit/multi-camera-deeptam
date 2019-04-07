@@ -12,7 +12,7 @@ This documentation briefly describes the steps involved in collecting the datase
 
 * You would need to install Unreal Engine and AirSim before you may start working. To do so, follow the instructions [here](https://microsoft.github.io/AirSim/docs/build_linux/).
 
-* Copy the file `settings.json` ([link](airsim/settings.json)) to `~/Documents/AirSim`
+* Copy the file `settings.json` ([link](airsim/utils/settings.json)) to `~/Documents/AirSim`
 
 * Further, Python 3.5 is required for running the dataset collection code. Moreover, install the following Python package:
 
