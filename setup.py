@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright 2019 Mayank Mittal. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,24 +21,41 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 # Minimum dependencies required prior to installation
 INSTALL_REQUIRES = [
     'minieigen',
     'numpy',
     'scipy',
+    'pyyaml',
     'matplotlib', 
     'scikit-image',
     'tensorflow-gpu==1.9.0'
 ]
+
+# List of packages to install
+PACKAGES = [
+    'deeptam_tracker',
+    'lmbspecialops'
+]
+
+# List of packages and their directories
+PACKAGES_DIR = {
+    '': 'lib',
+    'deeptam_tracker': 'lib/deeptam_tracker',
+    'lmbspecialops':'lib/lmbspecialops/python'
+}
 
 # Installation operation
 setup(name='deeptam',
       version='0.0.0',
       description='Tracking and Mapping using Deep Learning',
       keywords=["robotics", "machine learning", "visual odometry"],
-      packages=[package for package in find_packages()],
+      include_package_data=True,
+      python_requires='==3.5.*',
+      packages=PACKAGES,
+      package_dir=PACKAGES_DIR,
       install_requires=INSTALL_REQUIRES,
       zip_safe=False)
 

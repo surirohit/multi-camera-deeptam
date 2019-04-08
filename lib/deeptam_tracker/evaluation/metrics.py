@@ -1,7 +1,6 @@
 import os
 import numpy as np
-from .rgbd_sequence import RGBDSequence
-from ..utils.datatypes import *
+from deeptam_tracker.evaluation.rgbd_sequence import RGBDSequence
 
 def position_diff(pose1, pose2):
     """Computes the position difference between two poses

@@ -1,8 +1,6 @@
-import numpy as np
-import tensorflow as tf
-from .utils.helpers import *
-from .utils.datatypes import *
-from .utils.rotation_conversion import *
+from deeptam_tracker.utils.helpers import *
+from deeptam_tracker.utils.datatypes import *
+from deeptam_tracker.utils.rotation_conversion import *
 
 class Tracker:
     """This class implements a sequence tracker using TrackerCore. It allows for new key frame generation.
@@ -311,5 +309,3 @@ class TrackerCore:
             'pose': new_pose,
             'warped_image': output['warped_image']
         }
-    
-    

@@ -6,7 +6,6 @@ import numpy as np
 
 _loaded_module_id = 0
 
-
 def load_myNetworks_module(module_name, path_to_myNetworks):
     """Returns the myNetworks module
 

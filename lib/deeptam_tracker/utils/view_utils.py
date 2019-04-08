@@ -1,4 +1,4 @@
-from .datatypes import View
+from deeptam_tracker.utils.datatypes import View
 from PIL import Image
 from skimage.transform import resize
 import numpy as np

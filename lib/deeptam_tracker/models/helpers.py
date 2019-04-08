@@ -1,9 +1,6 @@
 import lmbspecialops as sops
 import tensorflow as tf
 import math
-from minieigen import Quaternion
-import numpy as np
-
 
 def convert_NCHW_to_NHWC(inp):
     """Convert the tensor from caffe format BCHW into tensorflow format BHWC

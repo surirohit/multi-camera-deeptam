@@ -58,7 +58,9 @@ def read_file_list(filename):
     filename -- File name
     
     Output:
-    dict -- dictionary of (stamp,data) tuples
+    dict -- dictionary of (stamp, data) tuples.
+
+    Note: In case of images, data is the string path to the image. For poses, it is the pose.
     
     """
     file = open(filename)

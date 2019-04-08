@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 from minieigen import MatrixX,Vector3
-from .datatypes import *
+from deeptam_tracker.utils.datatypes import *
 
 def convert_array_to_colorimg(inp):
     """Returns the img as PIL images"""

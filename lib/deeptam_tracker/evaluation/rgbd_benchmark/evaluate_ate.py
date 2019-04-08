@@ -42,6 +42,7 @@ trajectory and the estimated trajectory.
 import sys
 import numpy
 import argparse
+
 if __name__=="__main__":
     import associate
 else:

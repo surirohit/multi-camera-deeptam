@@ -1,6 +1,6 @@
-from .networks_base import TrackingNetworkBase
-from .blocks import *
-from .helpers import *
+from deeptam_tracker.models.networks_base import TrackingNetworkBase
+from deeptam_tracker.models.blocks import *
+from deeptam_tracker.models.helpers import *
 
 class TrackingNetwork(TrackingNetworkBase):
 
@@ -194,4 +194,3 @@ class TrackingNetwork(TrackingNetworkBase):
 
 
         return result
-
