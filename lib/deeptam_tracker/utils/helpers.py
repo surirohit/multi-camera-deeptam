@@ -6,6 +6,7 @@ import numpy as np
 
 _loaded_module_id = 0
 
+
 def load_myNetworks_module(module_name, path_to_myNetworks):
     """Returns the myNetworks module
 
@@ -19,16 +20,16 @@ def load_myNetworks_module(module_name, path_to_myNetworks):
     myNetworks_name = os.path.splitext(os.path.split(path_to_myNetworks)[1])[0]
 
     # add the __init__.py to the path if necessary
-    module_path = os.path.join(module_path,'__init__.py')
-        
+    module_path = os.path.join(module_path, '__init__.py')
+
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
     # this allows using importlib.import_module('.submod', module_name)
     sys.modules[module_name] = module
-    
-    return importlib.import_module('.'+myNetworks_name, module_name)
+
+    return importlib.import_module('.' + myNetworks_name, module_name)
 
 
 def load_myNetworks_module_noname(path_to_myNetworks):
@@ -41,7 +42,7 @@ def load_myNetworks_module_noname(path_to_myNetworks):
     module_name = '___myNetworks_module_{0}'.format(_loaded_module_id)
     _loaded_module_id += 1
     return load_myNetworks_module(module_name, path_to_myNetworks)
-   
+
 
 # function based on https://github.com/tensorflow/tensorflow/issues/312
 def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, ignore_incompatible_shapes=False):
@@ -67,17 +68,21 @@ def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, igno
         If False raises a runtime error f shapes are incompatible.
 
     """
-    def vprint(*args, **kwargs): 
+
+    def vprint(*args, **kwargs):
         if verbose: print(*args, flush=True, **kwargs)
+
     # def dbg(*args, **kwargs): print(*args, flush=True, **kwargs)
-    def dbg(*args, **kwargs): pass
+    def dbg(*args, **kwargs):
+        pass
+
     if ignore_vars is None:
         ignore_vars = []
 
     reader = tf.train.NewCheckpointReader(save_file)
     saved_shapes = reader.get_variable_to_shape_map()
     var_names = sorted([(var.name, var.dtype, var.name.split(':')[0]) for var in tf.global_variables()
-            if var.name.split(':')[0] in saved_shapes and not var.name.split(':')[0] in ignore_vars])
+                        if var.name.split(':')[0] in saved_shapes and not var.name.split(':')[0] in ignore_vars])
     restore_vars = []
 
     dbg(saved_shapes)
@@ -88,11 +93,11 @@ def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, igno
 
     with tf.variable_scope('', reuse=True):
         for var_name, var_dtype, saved_var_name in var_names:
-            dbg( var_name, var_dtype, saved_var_name, end='')
+            dbg(var_name, var_dtype, saved_var_name, end='')
             curr_var = tf.get_variable(saved_var_name, dtype=var_dtype)
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
-                dbg( ' shape OK')
+                dbg(' shape OK')
                 tmp = reader.get_tensor(saved_var_name)
                 dbg(tmp.dtype)
 
@@ -113,18 +118,20 @@ def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, igno
                 vprint('restoring    ', saved_var_name)
                 restore_vars.append(curr_var)
             else:
-                vprint('not restoring',saved_var_name, 'incompatible shape:', var_shape, 'vs', saved_shapes[saved_var_name])
+                vprint('not restoring', saved_var_name, 'incompatible shape:', var_shape, 'vs',
+                       saved_shapes[saved_var_name])
                 if not ignore_incompatible_shapes:
-                    raise RuntimeError('failed to restore "{0}" because of incompatible shapes: var: {1} vs saved: {2} '.format(saved_var_name, var_shape, saved_shapes[saved_var_name]))
+                    raise RuntimeError(
+                        'failed to restore "{0}" because of incompatible shapes: var: {1} vs saved: {2} '.format(
+                            saved_var_name, var_shape, saved_shapes[saved_var_name]))
 
     if nonfinite_values:
         raise RuntimeError('"{0}" contains nonfinite values!'.format(save_file))
 
-    dbg( '-1-')
+    dbg('-1-')
     saver = tf.train.Saver(
-            var_list=restore_vars,
-            restore_sequentially=True,)
-    dbg( '-2-')
+        var_list=restore_vars,
+        restore_sequentially=True, )
+    dbg('-2-')
     saver.restore(session, save_file)
-    dbg( '-3-')
-
+    dbg('-3-')

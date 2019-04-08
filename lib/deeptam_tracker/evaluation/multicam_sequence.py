@@ -6,6 +6,7 @@ import os
 import collections
 from deeptam_tracker.evaluation.rgbd_sequence import RGBDSequence
 
+
 class MultiCamSequence:
 
     def __init__(self, sequence_dirs, require_depth=False, require_pose=False):

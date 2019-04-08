@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import cv2
 from PIL import Image
 import yaml
 from minieigen import Quaternion
@@ -9,6 +10,7 @@ from deeptam_tracker.evaluation.rgbd_benchmark.evaluate_rpe import transform44
 from deeptam_tracker.utils.datatypes import *
 from deeptam_tracker.utils.view_utils import adjust_intrinsics
 from deeptam_tracker.utils.rotation_conversion import *
+from deeptam_tracker.utils import message as mg
 
 class RGBDSequence:
 
@@ -34,11 +36,11 @@ class RGBDSequence:
             try:
                 config = yaml.safe_load(file)
             except yaml.YAMLError as exc:
-                print(exc)
+                mg.print_warn(exc)
                 raise Exception("[ERROR] The file is not a valid YAML file!")
             # print success status
             self.cam_name = config['cam_name'].lower()
-            print("Successfully read the YAML file sequence: %s" % self.cam_name)
+            mg.print_pass("Successfully read the YAML file sequence: %s" % self.cam_name)
 
         else:
             raise Exception("[ERROR] YAML file not detected: {0}".format(config_yaml))
@@ -46,8 +48,12 @@ class RGBDSequence:
         # configuration for time-syncing operation
         time_max_difference = config['time_max_difference']
         time_offset = config['time_offset']
+
+        # read parameters for post-processing of poses and depth images
+        self.depth_scaling = config['depth_scaling']
+
         pose_frame = config['pose_frame']
-        if pose_frame == 'world'
+        if pose_frame == 'world':
             self.pose_in_world = True
         else:
             self.pose_in_world = False
@@ -55,6 +61,8 @@ class RGBDSequence:
         # read paths for rgb and depth images
         self.rgb_dict = read_file_list(rgb_txt)
         self.depth_dict = read_file_list(depth_txt)
+        mg.print_notify("Length of the read image sequence: %d" % len(self.rgb_dict))
+
         # associate two dictionaries of (stamp,data) for rgb and depth data
         self.matches_depth = associate(self.rgb_dict, self.depth_dict, offset=time_offset,
                                        max_difference=time_max_difference)
@@ -93,7 +101,7 @@ class RGBDSequence:
             if not os.path.exists(img_path):
                 continue
             # Corresponding depth image
-            if timestamp_rgb in self.matches_depth_dict:
+            if self.matches_depth_dict.get(timestamp_rgb, None) is not None:
                 timestamp_depth = self.matches_depth_dict[timestamp_rgb]
                 depth_path = os.path.join(self.sequence_dir, *self.depth_dict[timestamp_depth])
                 if not os.path.exists(depth_path):
@@ -103,7 +111,7 @@ class RGBDSequence:
             if require_depth and timestamp_depth is None:
                 continue
             # Corresponding pose
-            if timestamp_rgb in self.matches_pose_dict:
+            if self.matches_pose_dict is not None and self.matches_pose_dict.get(timestamp_rgb, None) is not None:
                 timestamp_pose = self.matches_pose_dict[timestamp_rgb]
             else:
                 timestamp_pose = None
@@ -118,17 +126,18 @@ class RGBDSequence:
             self.matches_depth_pose.append(timestamps_sync)
 
         # make sure the initial frame has a depth map and a pose
-        if self.matches_depth_pose[0]['timestamp_depth'] is None or self.matches_depth_pose[0][
-            'timestamp_pose'] is None:
+        while self.matches_depth_pose[0]['timestamp_depth'] is None or self.matches_depth_pose[0]['timestamp_pose'] is None:
             del self.matches_depth_pose[0]
+
         # get the sequence length after processing
         self.seq_len = len(self.matches_depth_pose)
+        mg.print_notify("Length of the synced image sequence: %d" % self.seq_len)
 
         # open first matched image to get the original image size
         im_size = Image.open(os.path.join(self.sequence_dir,
                                           *self.rgb_dict[self.matches_depth_pose[0]['timestamp_rgb']])).size
         if self.original_image_size != im_size:
-            raise Exception("Expected input images to be of size ({}, {}) but received ({}, {})"\
+            raise Exception("Expected input images to be of size ({}, {}) but received ({}, {})" \
                             .format(self.original_image_size[0], self.original_image_size[1],
                                     im_size[0], im_size[1]))
 
@@ -161,7 +170,7 @@ class RGBDSequence:
             self._K[1, 2] / self.original_image_size[1]
         ], dtype=np.float32)
 
-    def get_view(self, frame, normalized_intrinsics=None, width=None, height=None, depth=True):
+    def get_view(self, frame, normalized_intrinsics=None, width=128, height=96, depth=True):
         """Returns a view object for the given rgb frame
 
         frame: int
@@ -180,14 +189,9 @@ class RGBDSequence:
             If true the returned view object contains the depth map
         """
 
-        if width is None:
-            width = 128
-
-        if height is None:
-            height = 96
-
         if normalized_intrinsics is None:
             normalized_intrinsics = self.get_sun3d_intrinsics()
+
         new_K = np.eye(3)
         new_K[0, 0] = normalized_intrinsics[0] * width
         new_K[1, 1] = normalized_intrinsics[1] * height
@@ -195,24 +199,27 @@ class RGBDSequence:
         new_K[1, 2] = normalized_intrinsics[3] * height
 
         # get associated synced timestamps for RGB-Depth-Pose measurements
-        timestamp_sync = self.matches_depth_pose[frame]
-        trgb = timestamp_sync['timestamp_rgb']
-        tdepth = timestamp_sync['timestamp_depth']
-        tpose = timestamp_sync['timestamp_pose']
+        timestamps_sync = self.matches_depth_pose[frame]
+        trgb = timestamps_sync['timestamp_rgb']
+        tdepth = timestamps_sync['timestamp_depth']
+        tpose = timestamps_sync['timestamp_pose']
 
         img_path = os.path.join(self.sequence_dir, *self.rgb_dict[trgb])
         img = Image.open(img_path)
         img.load()
+        # Convert image from RGBA to RGB!
+        if np.array(img).shape[2] == 4:
+            img = Image.fromarray(cv2.cvtColor(np.array(img), cv2.COLOR_RGBA2RGB))
 
-        if depth and tdepth:
+        if depth and tdepth is not None:
             depth_path = os.path.join(self.sequence_dir, *self.depth_dict[tdepth])
-            dpth = self.read_depth_image(depth_path)
+            dpth = self.read_depth_image(depth_path, self.depth_scaling)
             dpth_metric = 'camera_z'
         else:
             dpth = None
             dpth_metric = None
 
-        if tpose:
+        if tpose is not None:
             pose_tuple = [tpose] + self.groundtruth_dict[tpose]
             T = transform44(pose_tuple)
             if not self.pose_in_world:
@@ -227,16 +234,15 @@ class RGBDSequence:
         view = View(R=R, t=t, K=self._K, image=img, depth=dpth, depth_metric=dpth_metric)
 
         new_view = adjust_intrinsics(view, new_K, width, height)
-        if depth and tdepth:
+        if depth and tdepth is not None:
             d = new_view.depth
-            d[d <= 0] = np.nan
             new_view = new_view._replace(depth=d)
 
         view.image.close()
         del view
         return new_view
 
-    def get_image(self, frame, normalized_intrinsics=None, width=None, height=None):
+    def get_image(self, frame, normalized_intrinsics=None, width=128, height=96):
         """Returns the image for the specified frame as numpy array
 
         frame: int
@@ -295,7 +301,7 @@ class RGBDSequence:
         """
         view = self.get_view(frame, normalized_intrinsics, width, height, depth=True)
         depth = view.depth
-        if inverse and not depth is None:
+        if inverse and depth is not None:
             depth = 1 / depth
         return (view.image, depth)
 
@@ -328,8 +334,9 @@ class RGBDSequence:
             'translation': view.t[np.newaxis, :],
             'pose': Pose(R=Matrix3(angleaxis_to_rotation_matrix(rotation)), t=Vector3(view.t))
         }
-        if not view.depth is None:
+        if view.depth is not None:
             result['depth'] = (1 / view.depth)[np.newaxis, np.newaxis, :, :]
+
         return result
 
     def get_relative_motion(self, frame1, frame2):
@@ -378,20 +385,22 @@ class RGBDSequence:
         return np.array([0.89115971, 1.18821287, 0.5, 0.5], dtype=np.float32)
 
     @staticmethod
-    def read_depth_image(path):
+    def read_depth_image(path, scaling_factor=5000):
         """Reads a png depth image and returns it as 2d numpy array.
         Invalid values will be represented as NAN
 
         path: str
             Path to the image
+
+        scaling_factor: float
+            Scaling the depth images (default: 5000)
         """
-        scalingFactor = 5000.0
-        depth = Image.open(path)
+        depth = Image.open(path).convert('I')
         depth.load()
         if depth.mode != "I":
             raise Exception("Depth image is not in intensity format {0}".format(path))
-        depth_arr = np.array(depth) / scalingFactor
-        # depth_arr[depth_arr == 0] = np.nan
+        depth_arr = np.array(depth) / scaling_factor
+        depth_arr[depth_arr == 0] = np.nan
         del depth
         return depth_arr.astype(np.float32)
 

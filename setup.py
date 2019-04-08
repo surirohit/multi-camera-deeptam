@@ -31,7 +31,8 @@ INSTALL_REQUIRES = [
     'pyyaml',
     'matplotlib', 
     'scikit-image',
-    'tensorflow-gpu==1.9.0'
+    'tensorflow-gpu==1.9.0',
+    'opencv-python'
 ]
 
 # List of packages to install
