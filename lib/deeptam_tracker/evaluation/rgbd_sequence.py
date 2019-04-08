@@ -50,7 +50,7 @@ class RGBDSequence:
         time_offset = config['time_offset']
 
         # read parameters for post-processing of poses and depth images
-        self.depth_scaling = config['depth_scaling']
+        self.depth_scaling = float(config['depth_scaling'])
 
         pose_frame = config['pose_frame']
         if pose_frame == 'world':

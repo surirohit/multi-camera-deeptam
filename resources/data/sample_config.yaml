@@ -16,5 +16,6 @@ height: 480
 time_max_difference: 0.02   # search radius for candidate generation
 time_offset: 0.0            # time offset (e.g., to model the delay between the sensors)
 
-# poses
+# parameters for post-processing of depth images and poses
+depth_scaling: 5000         # rescaling of depth images
 pose_frame: 'cam'           # frame in which groundtruth is present (world/cam)
