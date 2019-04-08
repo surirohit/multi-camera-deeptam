@@ -236,6 +236,7 @@ class RGBDSequence:
         new_view = adjust_intrinsics(view, new_K, width, height)
         if depth and tdepth is not None:
             d = new_view.depth
+            d[d <= 0] = np.nan
             new_view = new_view._replace(depth=d)
 
         view.image.close()
@@ -243,7 +244,7 @@ class RGBDSequence:
         return new_view
 
     def get_image(self, frame, normalized_intrinsics=None, width=128, height=96):
-        """Returns the image for the specified frame as numpy array
+        """Returns the normalized image [-0/5. 0.5] for the specified frame as numpy array
 
         frame: int
             The rgb frame number
@@ -279,7 +280,7 @@ class RGBDSequence:
 
         """
         depth = self.get_view(frame, normalized_intrinsics, width, height, depth=True, ).depth
-        if inverse and not depth is None:
+        if inverse and depth is not None:
             depth = 1 / depth
         return depth
 
@@ -340,7 +341,7 @@ class RGBDSequence:
         return result
 
     def get_relative_motion(self, frame1, frame2):
-        """Returns the realtive transformation from frame1 to frame2
+        """Returns the relative transformation from frame1 to frame2
 
         frame1: int
             Frame number 1
@@ -358,14 +359,14 @@ class RGBDSequence:
         pose_tuple = [tpose] + self.groundtruth_dict[tpose]
         inv_T1 = transform44(pose_tuple)
         if self.pose_in_world:
-            inv_T1 = np.linalg.inv(inv_T1)  # convert to cam to world
+            inv_T1 = np.linalg.inv(inv_T1)  # convert to cam1 to world
         # frame 2:
         timestamp_sync = self.matches_depth_pose[frame2]
         tpose = timestamp_sync['timestamp_pose']
         pose_tuple = [tpose] + self.groundtruth_dict[tpose]
         T2 = transform44(pose_tuple)
         if not self.pose_in_world:
-            T2 = np.linalg.inv(T2)  # convert to world to cam
+            T2 = np.linalg.inv(T2)          # convert to world to cam2
 
         # compute relative motion
         T = T2.dot(inv_T1)
@@ -385,7 +386,7 @@ class RGBDSequence:
         return np.array([0.89115971, 1.18821287, 0.5, 0.5], dtype=np.float32)
 
     @staticmethod
-    def read_depth_image(path, scaling_factor=5000):
+    def read_depth_image(path, scaling_factor=5000.0):
         """Reads a png depth image and returns it as 2d numpy array.
         Invalid values will be represented as NAN
 
@@ -393,14 +394,13 @@ class RGBDSequence:
             Path to the image
 
         scaling_factor: float
-            Scaling the depth images (default: 5000)
+            Scaling the depth images (default: 5000.0)
         """
         depth = Image.open(path).convert('I')
         depth.load()
         if depth.mode != "I":
-            raise Exception("Depth image is not in intensity format {0}".format(path))
+            raise Exception("Depth image is not in intensity format: {0}".format(path))
         depth_arr = np.array(depth) / scaling_factor
-        depth_arr[depth_arr == 0] = np.nan
         del depth
         return depth_arr.astype(np.float32)
 
