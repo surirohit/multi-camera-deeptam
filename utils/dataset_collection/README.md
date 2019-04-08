@@ -65,14 +65,14 @@ python suncg/download_suncg.py -v 2
 ```bash
 cp minos/sim_args.py ~/git/minos/minos/config
 cp minos/pygame_client.py ~/git/minos/minos/tools
+cp minos/utils/FirstPersonAgent.js ~git/minos/minos/server/node_modules/sstk/client/js/lib/sim
 ```
+* Rebuild the node js with build.sh script in ~git/minos/minos/server/node_modules/sstk/build.sh
 
 ## Running the program
 
 ```bash
 python3 -m minos.tools.pygame_client --depth --rightcamera 'True' --depthright 'True' --save_toc 'True' --save_rootdir
-
-python3 -m minos.tools.pygame_client --depth --rightcamera 'True' --depthright 'True'
 ```
 
 __NOTE:__ The direction vector is a normalized vector in MINOS world coordinate frame which indicates the direction the agent is facing. The agent uses a coordinate frame with Y up and -Z front. MINOS uses a world coordinate frame with the same conventions: Y up and -Z front. Both SUNCG and Matterport3d scenes are rotated to match this (SUNCG from Y up, +Z front and Matterport3D Z up, -X front, the front is somewhat arbitrary). The Y component of the orientation should be 0 since the agent is just moving in the XZ plane. If you want the relative orientation of the agent to the goal, you will find that in `observation.measurements.direction_to_goal`.
