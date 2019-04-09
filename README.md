@@ -26,7 +26,7 @@ data/
 
 The text files be similar to the ones [_TUM RGBD sequences_](https://vision.in.tum.de/data/datasets/rgbd-dataset), i.e. each line should first contain the timestamp information followed by the data:
 * __Images__: Data is the file path relative to the `config.yaml` file
-* __Groundtruth__: Data is the cartesion poisiotn and quaternion orientation of that particular camera
+* __Groundtruth__: Data is the cartesion position and quaternion orientation of that particular camera (in world/camera frame)
 
 An example YAML configuration file is present [here](resources/data/sample_config.yaml). Please rename it to `config.yaml` and ensure that the directory for each camera contains this file.
 ```bash
@@ -54,6 +54,6 @@ To run DeepTAM with a single camera setup, run:
 cd scripts
 # run the python script
 python single_camera_tracking.py \
-    --data_dir ../resources/data/rgbd_dataset_freiburg1_desk\
+    --data_dir ../resources/data/rgbd_dataset_freiburg1_desk \
     --weights ../resources/weights/deeptam_tracker_weights/snapshot-300000
 ```
