@@ -3,6 +3,13 @@
 
 Project for the course on 3D Vision at ETH Zurich
 
+This code has been tested on a computer with following specifications:
+* __OS Platform and Distribution:__ Linux Ubuntu 16.04LTS
+* __CUDA/cuDNN version:__ CUDA 9.0.176, cuDNN 7.1.4
+* __GPU model and memory:__ NVidia GeForce GTX 1070-MaxQ, 8GB
+* __Python__: 3.5.2
+* __TensorFlow:__ 1.9.0
+
 ## Dataset Directory Organization
 
 For each camera, the directory should be organized as shown below:
@@ -22,7 +29,9 @@ The text files be similar to the ones [_TUM RGBD sequences_](https://vision.in.t
 * __Groundtruth__: Data is the cartesion poisiotn and quaternion orientation of that particular camera
 
 An example YAML configuration file is present [here](resources/data/sample_config.yaml). Please rename it to `config.yaml` and ensure that the directory for each camera contains this file.
-
+```bash
+cp resources/data/sample_config.yaml /path/to/dataset/config.yaml
+```
 
 ## Installation Instructions:
 

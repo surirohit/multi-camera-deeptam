@@ -91,11 +91,7 @@ cd build
 cmake ..
 make
 
-#### add to path of virtual environment
-add2virtualenv $LMBSPECIALOPS_ROOT/python
-
 ### Install the python-packages
-cd lib
 pip install -e .
 
 exit
