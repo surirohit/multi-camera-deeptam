@@ -53,6 +53,7 @@ class RGBDSequence:
         self.depth_scaling = float(config['depth_scaling'])
 
         pose_frame = config['pose_frame']
+        mg.print_notify("Ground truth poses are given in the frame: %s" % pose_frame)
         if pose_frame == 'world':
             self.pose_in_world = True
         else:
@@ -91,6 +92,9 @@ class RGBDSequence:
             self.matches_pose = associate(self.rgb_dict, self.groundtruth_dict, offset=time_offset,
                                           max_difference=time_max_difference)
             self.matches_pose_dict = dict(self.matches_pose)
+        else:
+            self.matches_pose = None
+            self.matches_pose_dict = None
 
         # create list of the processed (time-synced) rgb-depth images and poses on the basis of rgb timestamps
         # Note: if any dictionary is empty, None is added for the entry
@@ -204,6 +208,7 @@ class RGBDSequence:
         tdepth = timestamps_sync['timestamp_depth']
         tpose = timestamps_sync['timestamp_pose']
 
+        # read RGB imagee
         img_path = os.path.join(self.sequence_dir, *self.rgb_dict[trgb])
         img = Image.open(img_path)
         img.load()
@@ -211,6 +216,7 @@ class RGBDSequence:
         if np.array(img).shape[2] == 4:
             img = Image.fromarray(cv2.cvtColor(np.array(img), cv2.COLOR_RGBA2RGB))
 
+        # read depth image
         if depth and tdepth is not None:
             depth_path = os.path.join(self.sequence_dir, *self.depth_dict[tdepth])
             dpth = self.read_depth_image(depth_path, self.depth_scaling)
@@ -219,6 +225,7 @@ class RGBDSequence:
             dpth = None
             dpth_metric = None
 
+        # read groundtruth
         if tpose is not None:
             pose_tuple = [tpose] + self.groundtruth_dict[tpose]
             T = transform44(pose_tuple)

@@ -25,14 +25,15 @@ from setuptools import setup
 
 # Minimum dependencies required prior to installation
 INSTALL_REQUIRES = [
-    'minieigen',
-    'numpy',
+    'minieigen==0.5.4',
+    'numpy==1.16.2',
     'scipy',
     'pyyaml',
     'matplotlib', 
-    'scikit-image',
+    'scikit-image==0.14.2',
     'tensorflow-gpu==1.9.0',
-    'opencv-python'
+    'opencv-python',
+    'pillow==6.0.0'
 ]
 
 # List of packages to install
