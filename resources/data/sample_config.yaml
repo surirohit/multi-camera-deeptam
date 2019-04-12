@@ -5,10 +5,10 @@
 cam_name: 'freiburg1'
 
 # camera intrinsics
-f_x: 554.3
-f_y: 415.7
-c_x: 320.0
-c_y: 240.0
+f_x: 517.3
+f_y: 516.5
+c_x: 318.6
+c_y: 255.3
 width: 640
 height: 480
 
