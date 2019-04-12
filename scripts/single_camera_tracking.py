@@ -10,6 +10,7 @@ import deeptam_tracker.models.networks
 from deeptam_tracker.evaluation.rgbd_sequence import RGBDSequence
 from deeptam_tracker.evaluation.metrics import rgbd_rpe
 from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_array_to_colorimg
+from deeptam_tracker.utils.helpers import load_yaml_file
 from deeptam_tracker.utils import message as mg
 
 
@@ -20,8 +21,8 @@ def parse_args():
     # Create parser instance
     parser = argparse.ArgumentParser(description="Run benchmarking tasks using noesis applet.")
     # Define arguments
-    parser.add_argument('--data_dir', '-d', metavar='',
-                        help='set a sequence data directory (should be consistent with TUM RGBD-SLAM datasets)')
+    parser.add_argument('--config_file', '-f', metavar='',
+                        help='set to path to configuration YAML file')
     parser.add_argument('--weights', '-w', metavar='',
                         help='set to path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)')
     parser.add_argument('--tracking_network', '-n', metavar='',
@@ -116,14 +117,14 @@ def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual)
     plt.pause(1e-9)
 
 
-def track_rgbd_sequence(checkpoint, datadir, tracking_module_path, visualization):
+def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization):
     """Tracks a rgbd sequence using deeptam tracker
     
     checkpoint: str
         directory to the weights
     
-    datadir: str
-        directory to the sequence data
+    config: dict
+        dictionary containing all the parameters for rgbd sequence and tracker
 
     tracking_module_path: str
         file which contains the model class
@@ -131,10 +132,15 @@ def track_rgbd_sequence(checkpoint, datadir, tracking_module_path, visualization
     visualization: bool
     """
 
-    ## initialization
-    sequence = RGBDSequence(datadir)
-    intrinsics = sequence.get_sun3d_intrinsics()
-    tracker = Tracker(tracking_module_path, checkpoint, intrinsics)
+    ### initialization
+    # initialize the camera sequence
+    sequence = RGBDSequence(config['cam_dir'], rgb_parameters=config['rgb_parameters'],
+                            depth_parameters=config['depth_parameters'],
+                            time_syncing_parameters=config['time_syncing_parameters'])
+    intrinsics = sequence.get_original_normalized_intrinsics()
+
+    # initialize corresponding tracker
+    tracker = Tracker(tracking_module_path, checkpoint, intrinsics, tracking_parameters=config['tracking_parameters'])
 
     gt_poses = []
     timestamps = []
@@ -182,23 +188,23 @@ def track_rgbd_sequence(checkpoint, datadir, tracking_module_path, visualization
 
 def main(args):
     visualization = not args.disable_vis
-    data_dir = os.path.realpath(args.data_dir)
+    config_file = args.config_file
+    tracking_module_path = args.tracking_network
     checkpoint = os.path.realpath(args.weights)
 
     # read the tracking network path :O
-    if args.tracking_network is None:
+    if tracking_module_path is None:
         tracking_module_path = os.path.abspath(deeptam_tracker.models.networks.__file__)
         mg.print_notify("Using default argument for tracking_network: %s" % tracking_module_path)
-    else:
-        tracking_module_path = os.path.realpath(args.tracking_network)
-
-    # ensure correct paths ;)
-    if not os.path.isdir(data_dir):
-        raise Exception("Could not find the data directory: %s!" % data_dir)
-    if not os.path.isfile(tracking_module_path):
+    elif not os.path.isfile(tracking_module_path):
         raise Exception("Could not find the network for tracking module: %s!" % tracking_module_path)
+    else:
+        tracking_module_path = os.path.realpath(tracking_module_path)
 
-    track_rgbd_sequence(checkpoint=checkpoint, datadir=data_dir, tracking_module_path=tracking_module_path,
+    # read the config YAML file and create a dictionary out of it
+    config = load_yaml_file(config_file)
+
+    track_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
                         visualization=visualization)
 
 
