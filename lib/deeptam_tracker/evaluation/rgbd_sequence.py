@@ -52,6 +52,7 @@ class RGBDSequence:
         time_offset = time_syncing_parameters['offset']
 
         # configuration for depth camera
+        # TODO: @Rohit, should we scale the depth images and clip the values?
         self.depth_min = depth_parameters['min']
         self.depth_max = depth_parameters['max']
         self.depth_scaling = depth_parameters['scaling']
