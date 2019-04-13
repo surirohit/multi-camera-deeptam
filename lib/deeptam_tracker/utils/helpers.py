@@ -6,6 +6,7 @@ import numpy as np
 
 _loaded_module_id = 0
 
+PRINT_PREFIX = '[UTILS][HELPERS]'
 
 def load_myNetworks_module(module_name, path_to_myNetworks):
     """Returns the myNetworks module
@@ -104,7 +105,7 @@ def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, igno
                 # check if there are nonfinite values in the tensor
                 if not np.all(np.isfinite(tmp)):
                     nonfinite_values = True
-                    print('{0} contains nonfinite values!'.format(saved_var_name), flush=True)
+                    print(PRINT_PREFIX, '{0} contains non-finite values!'.format(saved_var_name), flush=True)
 
                 if isinstance(tmp, np.ndarray):
                     saved_dtype = tf.as_dtype(tmp.dtype)
@@ -112,7 +113,7 @@ def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, igno
                     saved_dtype = tf.as_dtype(type(tmp))
                 dbg(saved_dtype, var_dtype, saved_dtype.is_compatible_with(var_dtype))
                 if not saved_dtype.is_compatible_with(var_dtype):
-                    raise TypeError('types are not compatible for {0}: saved type {1}, variable type {2}.'.format(
+                    raise TypeError(PRINT_PREFIX + 'types are not compatible for {0}: saved type {1}, variable type {2}.'.format(
                         saved_var_name, saved_dtype.name, var_dtype.name))
 
                 vprint('restoring    ', saved_var_name)
@@ -121,12 +122,12 @@ def optimistic_restore(session, save_file, ignore_vars=None, verbose=False, igno
                 vprint('not restoring', saved_var_name, 'incompatible shape:', var_shape, 'vs',
                        saved_shapes[saved_var_name])
                 if not ignore_incompatible_shapes:
-                    raise RuntimeError(
+                    raise RuntimeError(PRINT_PREFIX +
                         'failed to restore "{0}" because of incompatible shapes: var: {1} vs saved: {2} '.format(
                             saved_var_name, var_shape, saved_shapes[saved_var_name]))
 
     if nonfinite_values:
-        raise RuntimeError('"{0}" contains nonfinite values!'.format(save_file))
+        raise RuntimeError(PRINT_PREFIX + '"{0}" contains nonfinite values!'.format(save_file))
 
     dbg('-1-')
     saver = tf.train.Saver(

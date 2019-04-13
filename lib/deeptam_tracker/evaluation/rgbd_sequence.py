@@ -2,7 +2,6 @@ import os
 import numpy as np
 import cv2
 from PIL import Image
-import yaml
 from minieigen import Quaternion
 
 from deeptam_tracker.evaluation.rgbd_benchmark.associate import *
@@ -12,6 +11,7 @@ from deeptam_tracker.utils.view_utils import adjust_intrinsics
 from deeptam_tracker.utils.rotation_conversion import *
 from deeptam_tracker.utils import message as mg
 
+PRINT_PREFIX = '[EVALUATION][RGBDSequence]: '
 
 class RGBDSequence:
 
@@ -36,7 +36,7 @@ class RGBDSequence:
         assert isinstance(depth_parameters, dict)
         assert isinstance(time_syncing_parameters, dict)
         if rgb_parameters is None or depth_parameters is None or time_syncing_parameters is None:
-            raise Exception("[ERROR] Input parameters are incorrect!")
+            raise Exception(PRINT_PREFIX + "[ERROR] Input parameters are incorrect!")
 
         self.sequence_dir = os.path.realpath(sequence_dir)
         self.cam_name = cam_name.lower()
@@ -63,7 +63,7 @@ class RGBDSequence:
         # read paths for rgb and depth images
         self.rgb_dict = read_file_list(rgb_txt)
         self.depth_dict = read_file_list(depth_txt)
-        mg.print_notify("Length of the read image sequence: %d" % len(self.rgb_dict))
+        mg.print_notify(PRINT_PREFIX, "Length of the read image sequence: %d" % len(self.rgb_dict))
 
         # associate two dictionaries of (stamp,data) for rgb and depth data
         self.matches_depth = associate(self.rgb_dict, self.depth_dict, offset=time_offset,
@@ -131,13 +131,13 @@ class RGBDSequence:
 
         # get the sequence length after processing
         self.seq_len = len(self.matches_depth_pose)
-        mg.print_notify("Length of the synced image sequence: %d" % self.seq_len)
+        mg.print_notify(PRINT_PREFIX, "Length of the synced image sequence: %d" % self.seq_len)
 
         # open first matched image to get the original image size
         im_size = Image.open(os.path.join(self.sequence_dir,
                                           *self.rgb_dict[self.matches_depth_pose[0]['timestamp_rgb']])).size
         if self.original_image_size != im_size:
-            raise Exception("Expected input images to be of size ({}, {}) but received ({}, {})" \
+            raise Exception(PRINT_PREFIX + "Expected input images to be of size ({}, {}) but received ({}, {})" \
                             .format(self.original_image_size[0], self.original_image_size[1],
                                     im_size[0], im_size[1]))
 
