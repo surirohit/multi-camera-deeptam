@@ -13,6 +13,7 @@ from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_arr
 from deeptam_tracker.utils.parser import load_yaml_file
 from deeptam_tracker.utils import message as mg
 
+PRINT_PREFIX = '[MAIN]'
 
 def parse_args():
     """
@@ -154,12 +155,13 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization)
     pose0_gt = frame['pose']
     tracker.clear()
     # WIP: If gt_poses is aligned such that it starts from identity pose, you may comment this line
+    # TODO: @Rohit, should we make this base-to-cam transformation?
     tracker.set_init_pose(pose0_gt)
 
     ## track a sequence
     result = {}
     for frame_idx in range(sequence.get_sequence_length()):
-        print('frame {}'.format(frame_idx))
+        print(PRINT_PREFIX, 'Input frame number: {}'.format(frame_idx))
         frame = sequence.get_dict(frame_idx, intrinsics, tracker.image_width, tracker.image_height)
         timestamps.append(sequence.get_timestamp(frame_idx))
         result = tracker.feed_frame(frame['image'], frame['depth'])
@@ -177,7 +179,7 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization)
     ## evaluation
     pr_poses = tracker.poses
     errors_rpe = rgbd_rpe(gt_poses, pr_poses, timestamps)
-    mg.print_notify('Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
+    mg.print_notify(PRINT_PREFIX, 'Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
         errors_rpe['translational_error.rmse']))
 
     update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'])
@@ -195,9 +197,9 @@ def main(args):
     # read the tracking network path :O
     if tracking_module_path is None:
         tracking_module_path = os.path.abspath(deeptam_tracker.models.networks.__file__)
-        mg.print_notify("Using default argument for tracking_network: %s" % tracking_module_path)
+        mg.print_notify(PRINT_PREFIX, "Using default argument for tracking_network: %s" % tracking_module_path)
     elif not os.path.isfile(tracking_module_path):
-        raise Exception("Could not find the network for tracking module: %s!" % tracking_module_path)
+        raise Exception(PRINT_PREFIX, "Could not find the network for tracking module: %s!" % tracking_module_path)
     else:
         tracking_module_path = os.path.realpath(tracking_module_path)
 
