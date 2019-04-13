@@ -24,10 +24,14 @@ def load_yaml_file(config_file):
     else:
         raise Exception(PRINT_PREFIX + "[ERROR] YAML file not detected: {0}".format(config_file))
 
-    # get path to directory containing the YAML file
-    if config.get('cam_dir', None) is None or config['cam_dir'] == '.':
-        config['cam_dir'] = os.path.dirname(os.path.realpath(config_file))
-    elif not os.path.isdir(config['cam_dir']):
+    ## get path to directory containing the YAML file
+    # if absolute path not provided then use relative path with respect to the configuration file location
+    if config.get('cam_dir', None) is None or not os.path.isabs(config['cam_dir']):
+        # TODO: Rohit, can this be simplified?
+        config['cam_dir'] = os.path.join(os.path.dirname(os.path.realpath(config_file)), config['cam_dir'])
+
+    # throw error if directory does not exist
+    if not os.path.isdir(config['cam_dir']):
         raise Exception(PRINT_PREFIX + "[ERROR] Could not find the data directory: %s!" % config['cam_dir'])
 
     # create a dictionary of dictionaries

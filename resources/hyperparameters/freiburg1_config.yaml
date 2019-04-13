@@ -5,7 +5,8 @@
 cam_name: 'freiburg1'
 
 # data directory
-cam_dir: '.'              # '.' denotes current directory
+# provide the absolute path (i.e. /home/<name>/...) or a relative path with respect to location of this YAML file
+cam_dir: '../data/rgbd_dataset_freiburg1_desk'
 
 # rgb camera parameters
 rgb_parameters:
