@@ -10,7 +10,7 @@ import deeptam_tracker.models.networks
 from deeptam_tracker.evaluation.rgbd_sequence import RGBDSequence
 from deeptam_tracker.evaluation.metrics import rgbd_rpe
 from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_array_to_colorimg
-from deeptam_tracker.utils.helpers import load_yaml_file
+from deeptam_tracker.utils.parser import load_yaml_file
 from deeptam_tracker.utils import message as mg
 
 
