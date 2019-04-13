@@ -13,7 +13,7 @@ from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_arr
 from deeptam_tracker.utils.parser import load_yaml_file
 from deeptam_tracker.utils import message as mg
 
-PRINT_PREFIX = '[MAIN]'
+PRINT_PREFIX = '[MAIN]: '
 
 def parse_args():
     """
