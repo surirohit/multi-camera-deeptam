@@ -20,14 +20,14 @@ def parse_args():
     Parses CLI arguments applicable for this helper script
     """
     # Create parser instance
-    parser = argparse.ArgumentParser(description="Run benchmarking tasks using noesis applet.")
+    parser = argparse.ArgumentParser(description="Run DeepTAM on a monocular camera sequence.")
     # Define arguments
     parser.add_argument('--config_file', '-f', metavar='',
-                        help='set to path to configuration YAML file')
+                        help='set to the path to configuration YAML file')
     parser.add_argument('--weights', '-w', metavar='',
-                        help='set to path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)')
+                        help='set to the path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)')
     parser.add_argument('--tracking_network', '-n', metavar='',
-                        help='set to path of the tracking network (default: path to module deeptam_tracker.models.networks',
+                        help='set to the path of the tracking network (default: path to module deeptam_tracker.models.networks)',
                         default=None)
     parser.add_argument('--disable_vis', '-v', help='disable the frame-by-frame visualization for speed-up',
                         action='store_true')
