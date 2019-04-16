@@ -1,4 +1,4 @@
-import lmbspecialops as sops
+import lmbspecialops.python.lmbspecialops as sops
 import tensorflow as tf
 import math
 
