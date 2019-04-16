@@ -92,6 +92,7 @@ cmake ..
 make
 
 ### Install the python-packages
+cd ../../..
 pip install -e .
 
 exit
