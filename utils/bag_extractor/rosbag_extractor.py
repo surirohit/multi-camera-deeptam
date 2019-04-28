@@ -16,9 +16,9 @@ from cv_bridge import CvBridge, CvBridgeError
 ####### CONFIGURATION FOR TTHE SCRIPT ########
 ##############################################
 CAM_NUM_IDXS = [0, 1]
-RECORD_CAM_RGB = False
+RECORD_CAM_RGB = True
 RECORD_CAM_INFO = False
-RECORD_CAM_DEPTH = True
+RECORD_CAM_DEPTH = False
 
 ##############################################
 ### DO NOT TOUCH ANYTHING BEYOND THIS PART ###
@@ -141,11 +141,12 @@ class CameraIndexBag:
         :return:
         """
         # for rgb images
-        self.rgb_log_file.write("%d rgb/%d.png\n" % (curr_frame_time, curr_frame_time))
+	if RECORD_CAM_RGB:
+	    self.rgb_log_file.write("%f rgb/%f.png\n" % (curr_frame_time, curr_frame_time))
 
         # for depth images
-        if self.idx % 2 == 0:
-            self.depth_log_file.write("%d depth/%d.png\n" % (curr_frame_time, curr_frame_time))
+        if self.idx % 2 == 0 and RECORD_CAM_DEPTH:
+            self.depth_log_file.write("%f depth/%f.png\n" % (curr_frame_time, curr_frame_time))
 
 
 def extract_rosbag(rosbag_path, output_path):
@@ -172,7 +173,8 @@ def extract_rosbag(rosbag_path, output_path):
         # append the camera topics associated into the list
         topics = topics + cameras['cam_%d' % camera_idx].topics
 
-    print("TOPICS: ", topics)
+    print("Collecting topics: ", topics)
+    
     # Data structure for the images.
     #   timestamp -> camera_idx -> image (message)
     frames = {}
@@ -192,7 +194,6 @@ def extract_rosbag(rosbag_path, output_path):
 
             # Convert time object to number (in seconds) to be used as key.
             frame_time = msg.header.stamp.secs + msg.header.stamp.nsecs * 1e-9
-            print("Timestamp", frame_time)
 
             if frame_time not in frames:
                 # If the timestamp occurs for the first frame_time,
