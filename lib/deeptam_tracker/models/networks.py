@@ -39,7 +39,7 @@ class TrackingNetwork(TrackingNetworkBase):
 
         motion_prediction_list = [{'predict_rotation': prev_rotation, 'predict_translation': prev_translation}]
 
-        with tf.variable_scope("net_F1", reuse=None):
+        with tf.variable_scope("net_F1", reuse=tf.AUTO_REUSE):
             flow_inputs_and_gt = create_flow_inputs_and_gt(
                 key_image=key_image2,
                 current_image=current_image2,
@@ -54,7 +54,7 @@ class TrackingNetwork(TrackingNetworkBase):
 
             flow_inc_prediction = flow_block(flow_input, weights_regularizer=_weights_regularizer)
 
-        with tf.variable_scope("net_M1", reuse=None):
+        with tf.variable_scope("net_M1", reuse=tf.AUTO_REUSE):
             motion_inputs = [
                 (flow_inc_prediction['concat0'], 32),
                 (tf.stop_gradient(flow_inputs_and_gt['rendered_depth_near_far']), 16),
@@ -74,7 +74,7 @@ class TrackingNetwork(TrackingNetworkBase):
 
             motion_prediction_list.append(motion_prediction_abs)
 
-        with tf.variable_scope("net_F2", reuse=None):
+        with tf.variable_scope("net_F2", reuse=tf.AUTO_REUSE):
             flow_inputs_and_gt = create_flow_inputs_and_gt(
                 key_image=key_image1,
                 current_image=current_image1,
@@ -89,7 +89,7 @@ class TrackingNetwork(TrackingNetworkBase):
 
             flow_inc_prediction = flow_block(flow_input, weights_regularizer=_weights_regularizer)
 
-        with tf.variable_scope("net_M2", reuse=None):
+        with tf.variable_scope("net_M2", reuse=tf.AUTO_REUSE):
             motion_inputs = [
                 (flow_inc_prediction['concat0'], 32),
                 (tf.stop_gradient(flow_inputs_and_gt['rendered_depth_near_far']), 16),
@@ -109,7 +109,7 @@ class TrackingNetwork(TrackingNetworkBase):
 
             motion_prediction_list.append(motion_prediction_abs)
 
-        with tf.variable_scope("net_F3", reuse=None):
+        with tf.variable_scope("net_F3", reuse=tf.AUTO_REUSE):
             flow_inputs_and_gt = create_flow_inputs_and_gt(
                 key_image=key_image0,
                 current_image=current_image0,
@@ -124,7 +124,7 @@ class TrackingNetwork(TrackingNetworkBase):
 
             flow_inc_prediction = flow_block(flow_input, weights_regularizer=_weights_regularizer)
 
-        with tf.variable_scope("net_M3", reuse=None):
+        with tf.variable_scope("net_M3", reuse=tf.AUTO_REUSE):
             motion_inputs = [
                 (flow_inc_prediction['concat0'], 32),
                 (tf.stop_gradient(flow_inputs_and_gt['rendered_depth_near_far']), 16),

@@ -1,0 +1,11 @@
+# For Airsim Dataset
+
+# name of the sequence
+seq_name: 'airsim'
+
+# directories containing camera configs
+# provide the absolute paths (i.e. /home/<name>/...) or relative paths with respect to
+# the script you are using this file in
+camera_configs:
+  - '../resources/hyperparameters/airsim/left_cam.yaml'
+  - '../resources/hyperparameters/airsim/right_cam.yaml'
