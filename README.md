@@ -61,7 +61,7 @@ To run DeepTAM with a single camera setup, run:
 cd scripts
 # run the python script
 python single_camera_tracking.py \
-    --config_file ../resources/hyperparameters/freiburg1_config.yaml
+    --config_file ../resources/hyperparameters/freiburg1_config.yaml \
     --weights ../resources/weights/deeptam_tracker_weights/snapshot-300000
 ```
 
@@ -75,4 +75,11 @@ __Input Arguments:__
 
 __Example:__ 
 
-TO BE DONE!
+To run DeepTAM with a multi camera setup, run:
+```bash
+cd scripts
+# run the python script
+python single_camera_tracking.py \
+    --config_file ../resources/hyperparameters/freiburg1_config.yaml \
+    --weights ../resources/weights/deeptam_tracker_weights/snapshot-300000
+```
