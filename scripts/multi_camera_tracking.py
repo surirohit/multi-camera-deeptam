@@ -173,7 +173,7 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
 
     for idx in range(len(pr_poses_list)):
         ## evaluation
-        errors_rpe = rgbd_rpe(gt_poses_list[i], pr_poses_list[i], timestamps_list[i])
+        errors_rpe = rgbd_rpe(gt_poses_list[idx], pr_poses_list[idx], timestamps_list[idx])
         print(PRINT_PREFIX, "Camera %d:"%idx,)
         mg.print_notify('Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
             errors_rpe['translational_error.rmse']))
