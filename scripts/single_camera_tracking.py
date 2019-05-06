@@ -15,6 +15,7 @@ from deeptam_tracker.utils import message as mg
 
 PRINT_PREFIX = '[MAIN]: '
 
+
 def parse_args():
     """
     Parses CLI arguments applicable for this helper script
