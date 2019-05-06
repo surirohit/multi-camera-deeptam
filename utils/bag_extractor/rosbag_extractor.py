@@ -15,10 +15,11 @@ from cv_bridge import CvBridge, CvBridgeError
 ##############################################
 ####### CONFIGURATION FOR TTHE SCRIPT ########
 ##############################################
-CAM_NUM_IDXS = [0, 1]
+CAM_NUM_IDXS = [0, 1, 2, 3, 4, 5, 6, 7, 9]
 RECORD_CAM_RGB = True
 RECORD_CAM_INFO = False
 RECORD_CAM_DEPTH = False
+
 
 ##############################################
 ### DO NOT TOUCH ANYTHING BEYOND THIS PART ###
@@ -141,8 +142,8 @@ class CameraIndexBag:
         :return:
         """
         # for rgb images
-	if RECORD_CAM_RGB:
-	    self.rgb_log_file.write("%f rgb/%f.png\n" % (curr_frame_time, curr_frame_time))
+        if RECORD_CAM_RGB:
+            self.rgb_log_file.write("%f rgb/%f.png\n" % (curr_frame_time, curr_frame_time))
 
         # for depth images
         if self.idx % 2 == 0 and RECORD_CAM_DEPTH:
@@ -174,7 +175,7 @@ def extract_rosbag(rosbag_path, output_path):
         topics = topics + cameras['cam_%d' % camera_idx].topics
 
     print("Collecting topics: ", topics)
-    
+
     # Data structure for the images.
     #   timestamp -> camera_idx -> image (message)
     frames = {}
