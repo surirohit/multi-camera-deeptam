@@ -17,6 +17,7 @@ from multicam_tracker.multicam_tracker import MultiCamTracker
 
 PRINT_PREFIX = '[MAIN]: '
 
+
 def parse_args():
     """
     Parses CLI arguments applicable for this helper script
@@ -127,7 +128,7 @@ def update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list
                              gt_poses_list[idx],
                              frame_list[idx]['image'],
                              result_list[idx]['warped_image'])
- 
+
 
 def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization):
     """Tracks a multicam rgbd sequence using deeptam tracker
@@ -149,8 +150,8 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
 
     multicam_tracker = MultiCamTracker(config['camera_configs'], tracking_module_path, checkpoint)
 
-    axes_list = [init_visualization(title="DeepTAM Tracker Cam %d"%idx) \
-                    for idx in range(len(config['camera_configs']))]
+    axes_list = [init_visualization(title="DeepTAM Tracker Cam %d" % idx) \
+                 for idx in range(len(config['camera_configs']))]
 
     # Putting in higher scope so that don't need to call function again after loop
     pr_poses_list = None
@@ -159,12 +160,12 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     result_list = None
 
     for frame_idx in range(multicam_tracker.get_sequence_length()):
-        
+
         print(PRINT_PREFIX, 'Input frame number: {}'.format(frame_idx))
         pr_poses_list, gt_poses_list, frame_list, result_list = \
             multicam_tracker.update(frame_idx)
-        
-        #TODO: visualization
+
+        # TODO: visualization
         if visualization:
             update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list)
 
@@ -174,15 +175,16 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     for idx in range(len(pr_poses_list)):
         ## evaluation
         errors_rpe = rgbd_rpe(gt_poses_list[idx], pr_poses_list[idx], timestamps_list[idx])
-        print(PRINT_PREFIX, "Camera %d:"%idx,)
+        print(PRINT_PREFIX, "Camera %d:" % idx, )
         mg.print_notify('Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
             errors_rpe['translational_error.rmse']))
 
     # TODO: visualization
-    update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list)    
+    update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list)
     plt.show()
 
     multicam_tracker.delete_tracker()
+
 
 def load_yaml(filename):
     data = None
@@ -198,6 +200,7 @@ def load_yaml(filename):
         print(PRINT_PREFIX, "Config file not found")
         exit()
     return data
+
 
 def main(args):
     visualization = not args.disable_vis
@@ -218,7 +221,7 @@ def main(args):
     config = load_yaml(config_file)
 
     track_multicam_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
-                        visualization=visualization)
+                                 visualization=visualization)
 
 
 if __name__ == "__main__":
