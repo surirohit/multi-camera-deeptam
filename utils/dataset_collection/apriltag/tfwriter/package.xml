@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>tf_writer</name>
+  <version>0.0.0</version>
+  <description>EKF based formation estimator</description>
+  <url></url>
+  <author>Fadhil Ginting</author>
+  <maintainer email="gintingf@student.ethz.ch">Fadhil Ginting</maintainer>
+  <license>Propriatary</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
+  <depend>cmake_modules</depend>
+  <depend>roscpp</depend>
+  <depend>roslib</depend>
+  <depend>glog_catkin</depend>
+  <depend>gflags_catkin</depend>
+  <depend>eigen_catkin</depend>
+  <depend>aslam_cv_common</depend>
+  <depend>aslam_cv_cameras</depend>
+  <depend>robopt</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>geometry_msgs</depend>
+  <exec_depend>message_runtime</exec_depend>
+
+</package>
