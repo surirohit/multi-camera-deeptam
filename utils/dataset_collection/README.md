@@ -76,3 +76,39 @@ python3 -m minos.tools.pygame_client --depth --rightcamera 'True' --depthright '
 ```
 
 __NOTE:__ The direction vector is a normalized vector in MINOS world coordinate frame which indicates the direction the agent is facing. The agent uses a coordinate frame with Y up and -Z front. MINOS uses a world coordinate frame with the same conventions: Y up and -Z front. Both SUNCG and Matterport3d scenes are rotated to match this (SUNCG from Y up, +Z front and Matterport3D Z up, -X front, the front is somewhat arbitrary). The Y component of the orientation should be 0 since the agent is just moving in the XZ plane. If you want the relative orientation of the agent to the goal, you will find that in `observation.measurements.direction_to_goal`.
+
+# Apriltags Tracking
+
+[Apriltags](https://github.com/AprilRobotics/apriltag_ros.git) is a Robot Operating System (ROS) wrapper of the AprilTags 2 visual fiducial detector. For details and tutorials, please see the ROS wiki.
+
+## Install Dependencies
+
+* Clone the following repository from GitHub:
+```bash
+cd ~/git
+git clone https://github.com/AprilRobotics/apriltag_ros.git
+cd ~/catkin_ws ; catkin build
+```
+
+* Copy the following files from the directory apriltag:
+```bash
+cp apriltags2_ros/config/settings.yaml ~/git/apriltag_ros/apriltags2_ros/config/
+cp apriltags2_ros/config/tags.yaml ~/git/apriltag_ros/apriltags2_ros/config/
+cp apriltags2_ros/launch/cam_tracking.launch ~/git/apriltag_ros/apriltags2_ros/launch/
+```
+
+* Link the tfwriter package to catkin workspace(Eigen library and package required to do 4x4 matrix inversion):
+```bash
+cd ~/catkin_ws/src/
+ln -s tfwriter 
+cd ..;catkin build
+```
+
+## Running the program
+
+```bash
+roslaunch apriltags2_ros cam_tracking.launch
+rosrun tf_writer tfwriter_node 
+ 
+```
+
