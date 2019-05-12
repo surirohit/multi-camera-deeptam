@@ -12,6 +12,7 @@ from deeptam_tracker.utils import message as mg
 
 from multicam_tracker.utils.parser import load_multi_cam_config_yaml
 from multicam_tracker.multicam_tracker import MultiCamTracker
+from multicam_tracker.utils.parser import write_tum_trajectory_file
 
 PRINT_PREFIX = '[MAIN]: '
 
@@ -25,6 +26,8 @@ def parse_args():
     # Define arguments
     parser.add_argument('--config_file', '-f', metavar='',
                         help='set to the path to configuration YAML file')
+    parser.add_argument('--output_dir', '-o', metavar='',
+                        help='set to the path to output directory', default='eval')
     parser.add_argument('--weights', '-w', metavar='',
                         help='set to the path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)')
     parser.add_argument('--tracking_network', '-n', metavar='',
@@ -128,7 +131,7 @@ def update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list
                              result_list[idx]['warped_image'])
 
 
-def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization):
+def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
     """Tracks a multicam rgbd sequence using deeptam tracker
     
     checkpoint: str
@@ -141,6 +144,10 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
         file which contains the model class
         
     visualization: bool
+
+
+    output_dir: str
+        directory path save the output data
     """
 
     ## initialization
@@ -172,12 +179,19 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     gt_poses_list = multicam_tracker.get_gt_poses_list()
     timestamps_list = multicam_tracker.get_timestamps_list()
 
-    for idx in range(len(pr_poses_list)):
+    for idx in range(multicam_tracker.num_of_cams):
         ## evaluation
         errors_rpe = rgbd_rpe(gt_poses_list[idx], pr_poses_list[idx], timestamps_list[idx])
-        print(PRINT_PREFIX, "Camera %d:" % idx, )
+        print(PRINT_PREFIX, "Camera %d:" % idx)
         mg.print_notify('Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
             errors_rpe['translational_error.rmse']))
+
+        ## save trajectory files
+        name = multicam_tracker.cameras_list[idx].name
+        write_tum_trajectory_file(os.path.join(output_dir, name, 'stamped_traj_estimate.txt'), timestamps_list[idx],
+                                  pr_poses_list[idx])
+        write_tum_trajectory_file(os.path.join(output_dir, name, 'stamped_groundtruth.txt'), timestamps_list[idx],
+                                  gt_poses_list[idx])
 
     # TODO: visualization
     update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list)
@@ -191,6 +205,7 @@ def main(args):
     config_file = args.config_file
     tracking_module_path = args.tracking_network
     checkpoint = os.path.realpath(args.weights)
+    output_dir = os.path.abspath(args.output_dir)
 
     # read the tracking network path :O
     if tracking_module_path is None:
@@ -203,9 +218,10 @@ def main(args):
 
     # read the config YAML file and create a dictionary out of it
     config = load_multi_cam_config_yaml(config_file)
+    os.makedirs(output_dir, exist_ok=True)
 
     track_multicam_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
-                                 visualization=visualization)
+                                 visualization=visualization, output_dir=output_dir)
 
 
 if __name__ == "__main__":

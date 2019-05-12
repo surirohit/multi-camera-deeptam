@@ -80,3 +80,12 @@ def rotation_matrix_to_angleaxis(R):
     angle, axis = Quaternion(R).toAngleAxis()
     aa = angle * axis
     return np.array(aa)
+
+def rotation_matrix_to_quaternion(R):
+    """Converts the rotation matrix to the quaternion representation.
+
+    R: minieigen.Matrix3 or np.array
+
+    returns the unit quaternion
+    """
+    return Quaternion(R)

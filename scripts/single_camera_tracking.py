@@ -13,6 +13,8 @@ from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_arr
 from deeptam_tracker.utils.parser import load_camera_config_yaml
 from deeptam_tracker.utils import message as mg
 
+from multicam_tracker.utils.parser import write_tum_trajectory_file
+
 PRINT_PREFIX = '[MAIN]: '
 
 
@@ -25,6 +27,8 @@ def parse_args():
     # Define arguments
     parser.add_argument('--config_file', '-f', metavar='',
                         help='set to the path to configuration YAML file')
+    parser.add_argument('--output_dir', '-o', metavar='',
+                        help='set to the path to output directory', default='eval')
     parser.add_argument('--weights', '-w', metavar='',
                         help='set to the path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)')
     parser.add_argument('--tracking_network', '-n', metavar='',
@@ -119,7 +123,7 @@ def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual)
     plt.pause(1e-9)
 
 
-def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization):
+def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
     """Tracks a rgbd sequence using deeptam tracker
     
     checkpoint: str
@@ -132,6 +136,9 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization)
         file which contains the model class
         
     visualization: bool
+
+    output_dir: str
+        directory path save the output data
     """
 
     ### initialization
@@ -183,6 +190,11 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization)
     mg.print_notify(PRINT_PREFIX, 'Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
         errors_rpe['translational_error.rmse']))
 
+    ## save trajectory files
+    write_tum_trajectory_file(os.path.join(output_dir, sequence.cam_name, 'stamped_traj_estimate.txt'), timestamps, pr_poses)
+    write_tum_trajectory_file(os.path.join(output_dir, sequence.cam_name, 'stamped_groundtruth.txt'), timestamps, gt_poses)
+
+    ## update visualization
     update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'])
     plt.show()
 
@@ -194,6 +206,7 @@ def main(args):
     config_file = args.config_file
     tracking_module_path = args.tracking_network
     checkpoint = os.path.realpath(args.weights)
+    output_dir = os.path.abspath(args.output_dir)
 
     # read the tracking network path :O
     if tracking_module_path is None:
@@ -206,9 +219,10 @@ def main(args):
 
     # read the config YAML file and create a dictionary out of it
     config = load_camera_config_yaml(config_file)
+    os.makedirs(output_dir, exist_ok=True)
 
     track_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
-                        visualization=visualization)
+                        visualization=visualization, output_dir=output_dir)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,9 @@ class MultiCamTracker:
         self.key_gt_poses_list = [[] for _ in range(self.num_of_cams)]
         self.key_timestamps_list = [[] for _ in range(self.num_of_cams)]
 
+        # sequence length is minimum of all
+        self.sequence_length = min([cam.get_sequence_length() for cam in self.cameras_list])
+
     def __del__(self):
         self.delete_tracker()
 
@@ -97,7 +100,7 @@ class MultiCamTracker:
         return pr_poses_list, self.gt_poses, frame_list, result_list
 
     def get_sequence_length(self):
-        return self.cameras_list[0].get_sequence_length()
+        return self.sequence_length
 
     def get_gt_poses_list(self):
         return self.gt_poses

@@ -64,6 +64,7 @@ chmod +x download_weights.sh
 __Input Arguments:__ 
 
 * `--config_file` or `-f`: set to the path of configuration YAML file
+* `--output_dir` or `-o`: set to the path of configuration YAML file (default: '')
 *  `--weights` or `-w`: set to the path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)
 *  `--tracking_network` or `-n`: set to the path of the tracking network (default: path to module deeptam_tracker.models.networks)
 *  `--disable_vis` or `-v`: disable the frame-by-frame visualization for speed-up
