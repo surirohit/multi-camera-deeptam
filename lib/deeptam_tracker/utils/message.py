@@ -20,38 +20,38 @@ class Base:
     NC = '\x1b[0m'  # No Color
 
 
-def print_fail(*messages, end='\n'):
+def print_fail(*messages, end='\n', flush=False):
     for message in messages:
         print(Base.BOLD + Base.FAIL + str(message) + Base.END, end="", sep=" ")
-    print(end=end)
+    print(end=end, flush=flush)
     sys.exit(0)
 
 
-def print_pass(*messages, end='\n'):
+def print_pass(*messages, end='\n', flush=False):
     for message in messages:
         print(Base.BOLD + Base.OKGREEN + str(message) + Base.END, end="", sep=" ")
-    print(end=end)
+    print(end=end, flush=flush)
 
 
-def print_warn(*messages, end='\n'):
+def print_warn(*messages, end='\n', flush=False):
     for message in messages:
         print(Base.BOLD + Base.WARNING + str(message) + Base.END, end="", sep=" ")
-    print(end=end)
+    print(end=end, flush=flush)
 
 
-def print_notify(*messages, end='\n'):
+def print_notify(*messages, end='\n', flush=False):
     for message in messages:
         print(Base.BOLD + Base.OKBLUE + str(message) + Base.END, end="", sep=" ")
-    print(end=end)
+    print(end=end, flush=flush)
 
 
-def print_info(*messages, end='\n'):
+def print_info(*messages, end='\n', flush=False):
     for message in messages:
         print(message, end="", sep=" ")
-    print(end=end)
+    print(end=end, flush=flush)
 
 
-def print_bold(*messages, end='\n'):
+def print_bold(*messages, end='\n', flush=False):
     for message in messages:
         print(Base.BOLD + str(message) + Base.END, end="", sep=" ")
-    print(end=end)
+    print(end=end, flush=flush)

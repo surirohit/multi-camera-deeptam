@@ -45,8 +45,7 @@ PACKAGES = [
 # List of packages and their directories
 PACKAGES_DIR = {
     '': 'lib',
-    'deeptam_tracker': 'lib/deeptam_tracker',
-    'lmbspecialops':'lib/lmbspecialops/python'
+    'deeptam_tracker': 'lib/deeptam_tracker'
 }
 
 # Installation operation

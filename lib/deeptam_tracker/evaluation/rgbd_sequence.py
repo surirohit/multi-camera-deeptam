@@ -2,7 +2,6 @@ import os
 import numpy as np
 import cv2
 from PIL import Image
-import yaml
 from minieigen import Quaternion
 
 from deeptam_tracker.evaluation.rgbd_benchmark.associate import *
@@ -12,69 +11,66 @@ from deeptam_tracker.utils.view_utils import adjust_intrinsics
 from deeptam_tracker.utils.rotation_conversion import *
 from deeptam_tracker.utils import message as mg
 
+PRINT_PREFIX = '[EVALUATION][RGBDSequence]: '
+
 class RGBDSequence:
 
-    def __init__(self, sequence_dir, require_depth=False, require_pose=False):
+    def __init__(self, sequence_dir, cam_name='cam', rgb_parameters=None, depth_parameters=None,
+                 time_syncing_parameters=None, require_depth=False, require_pose=False):
         """
         Creates an object for accessing an rgbd benchmark sequence
 
         :param sequence_dir: (str) Path to the directory of a sequence
-        :param seq_name: (str) Name of the sequence
+        :param cam_name: (str) name of the camera
+        :param rgb_parameters: (dict) rgb camera parameters, keys = [f_x, f_y, c_x, c_y, width, height]
+        :param depth_parameters: (dict) depth camera parameters, keys = [min, max, scaling]
+        :param time_syncing_parameters: (dict) parameters for time-syncing, keys = [max_difference, offset]
         :param require_depth:
         :param require_pose:
         """
-        self.sequence_dir = sequence_dir
+        # check inputs are correct
+        assert isinstance(sequence_dir, str)
+        assert isinstance(cam_name, str)
+        print(rgb_parameters)
+        assert isinstance(rgb_parameters, dict)
+        assert isinstance(depth_parameters, dict)
+        assert isinstance(time_syncing_parameters, dict)
+        if rgb_parameters is None or depth_parameters is None or time_syncing_parameters is None:
+            raise Exception(PRINT_PREFIX + "[ERROR] Input parameters are incorrect!")
+
+        self.sequence_dir = os.path.realpath(sequence_dir)
+        self.cam_name = cam_name.lower()
         self.intrinsics = None
 
+        # file names with sequence information
         depth_txt = os.path.join(sequence_dir, 'depth.txt')
         rgb_txt = os.path.join(sequence_dir, 'rgb.txt')
         groundtruth_txt = os.path.join(sequence_dir, 'groundtruth.txt')
-        config_yaml = os.path.join(sequence_dir, 'config.yaml')
-
-        if os.path.exists(config_yaml):
-            file = open(config_yaml, 'r')
-            try:
-                config = yaml.safe_load(file)
-            except yaml.YAMLError as exc:
-                mg.print_warn(exc)
-                raise Exception("[ERROR] The file is not a valid YAML file!")
-            # print success status
-            self.cam_name = config['cam_name'].lower()
-            mg.print_pass("Successfully read the YAML file sequence: %s" % self.cam_name)
-
-        else:
-            raise Exception("[ERROR] YAML file not detected: {0}".format(config_yaml))
 
         # configuration for time-syncing operation
-        time_max_difference = config['time_max_difference']
-        time_offset = config['time_offset']
+        time_max_difference = time_syncing_parameters['max_difference']
+        time_offset = time_syncing_parameters['offset']
 
-        # read parameters for post-processing of poses and depth images
-        self.depth_scaling = float(config['depth_scaling'])
+        # configuration for depth camera
+        # TODO: @Rohit, should we scale the depth images and clip the values?
+        self.depth_min = depth_parameters['min']
+        self.depth_max = depth_parameters['max']
+        self.depth_scaling = depth_parameters['scaling']
 
-        pose_frame = config['pose_frame']
-        mg.print_notify("Ground truth poses are given in the frame: %s" % pose_frame)
-        if pose_frame == 'world':
-            self.pose_in_world = True
-        else:
-            self.pose_in_world = False
+        # configuration for rgb camera
+        self.intrinsics = [rgb_parameters['f_x'], rgb_parameters['f_y'], rgb_parameters['c_x'], rgb_parameters['c_y']]
+        self.original_image_size = (rgb_parameters['width'], rgb_parameters['height'])
 
         # read paths for rgb and depth images
         self.rgb_dict = read_file_list(rgb_txt)
         self.depth_dict = read_file_list(depth_txt)
-        mg.print_notify("Length of the read image sequence: %d" % len(self.rgb_dict))
+        mg.print_notify(PRINT_PREFIX, "Length of the read image sequence: %d" % len(self.rgb_dict))
 
         # associate two dictionaries of (stamp,data) for rgb and depth data
         self.matches_depth = associate(self.rgb_dict, self.depth_dict, offset=time_offset,
                                        max_difference=time_max_difference)
         self.matches_depth_dict = dict(self.matches_depth)
 
-        # read camera intrinsics from the file
-        self.intrinsics = [config['f_x'], config['f_y'], config['c_x'], config['c_y']]
-        self.original_image_size = (config['width'], config['height'])
-        # check if the intrinsics have been read :)
-        if self.intrinsics is None:
-            raise Exception("[ERROR] No suitable intrinsics found!")
         # create the camera matrix
         self._K = np.eye(3)
         self._K[0, 0] = self.intrinsics[0]
@@ -130,18 +126,19 @@ class RGBDSequence:
             self.matches_depth_pose.append(timestamps_sync)
 
         # make sure the initial frame has a depth map and a pose
-        while self.matches_depth_pose[0]['timestamp_depth'] is None or self.matches_depth_pose[0]['timestamp_pose'] is None:
+        while self.matches_depth_pose[0]['timestamp_depth'] is None or self.matches_depth_pose[0][
+            'timestamp_pose'] is None:
             del self.matches_depth_pose[0]
 
         # get the sequence length after processing
         self.seq_len = len(self.matches_depth_pose)
-        mg.print_notify("Length of the synced image sequence: %d" % self.seq_len)
+        mg.print_notify(PRINT_PREFIX, "Length of the synced image sequence: %d" % self.seq_len)
 
         # open first matched image to get the original image size
         im_size = Image.open(os.path.join(self.sequence_dir,
                                           *self.rgb_dict[self.matches_depth_pose[0]['timestamp_rgb']])).size
         if self.original_image_size != im_size:
-            raise Exception("Expected input images to be of size ({}, {}) but received ({}, {})" \
+            raise Exception(PRINT_PREFIX + "Expected input images to be of size ({}, {}) but received ({}, {})" \
                             .format(self.original_image_size[0], self.original_image_size[1],
                                     im_size[0], im_size[1]))
 
@@ -229,8 +226,7 @@ class RGBDSequence:
         if tpose is not None:
             pose_tuple = [tpose] + self.groundtruth_dict[tpose]
             T = transform44(pose_tuple)
-            if not self.pose_in_world:
-                T = np.linalg.inv(T)  # convert to (world to cam)
+            T = np.linalg.inv(T)  # convert to (world to cam)
 
             R = T[:3, :3]
             t = T[:3, 3]
@@ -365,15 +361,13 @@ class RGBDSequence:
         tpose = timestamp_sync['timestamp_pose']
         pose_tuple = [tpose] + self.groundtruth_dict[tpose]
         inv_T1 = transform44(pose_tuple)
-        if self.pose_in_world:
-            inv_T1 = np.linalg.inv(inv_T1)  # convert to cam1 to world
+
         # frame 2:
         timestamp_sync = self.matches_depth_pose[frame2]
         tpose = timestamp_sync['timestamp_pose']
         pose_tuple = [tpose] + self.groundtruth_dict[tpose]
         T2 = transform44(pose_tuple)
-        if not self.pose_in_world:
-            T2 = np.linalg.inv(T2)          # convert to world to cam2
+        T2 = np.linalg.inv(T2)  # convert to world to cam2
 
         # compute relative motion
         T = T2.dot(inv_T1)

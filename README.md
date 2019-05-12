@@ -13,10 +13,9 @@ This code has been tested on a computer with following specifications:
 ## Dataset Directory Organization
 
 For each camera, the directory should be organized as shown below:
-```bash
+```txt
 data/
 └── cam_1/  
-    ├── config.yaml
     ├── depth
     ├── depth.txt
     ├── groundtruth.txt
@@ -24,14 +23,13 @@ data/
     └── rgb.txt
 ```
 
-The text files be similar to the ones [_TUM RGBD sequences_](https://vision.in.tum.de/data/datasets/rgbd-dataset), i.e. each line should first contain the timestamp information followed by the data:
-* __Images__: Data is the file path relative to the `config.yaml` file
-* __Groundtruth__: Data is the cartesion position and quaternion orientation of that particular camera (in world/camera frame)
+The text files be similar to the ones present in [_TUM RGBD sequences_](https://vision.in.tum.de/data/datasets/rgbd-dataset), i.e. each line should first contain the timestamp information followed by the data:
+* __Images__: Data is the file path relative to the sequence directory name specified in the `config.yaml` file
+* __Groundtruth__: Data is the cartesian position and quaternion orientation of that particular camera (in world/camera frame)
 
-An example YAML configuration file is present [here](resources/data/sample_config.yaml). Please rename it to `config.yaml` and ensure that the directory for each camera contains this file.
-```bash
-cp resources/data/sample_config.yaml /path/to/dataset/config.yaml
-```
+An example YAML configuration file for the RGBD Freiburg1 Desk Sequence is present [here](resources/hyperparameters/freiburg1_config.yaml). 
+
+__NOTE:__ Please ensure that the sequence directory and camera intrinsics are correctly modified according to the dataset. 
 
 ## Installation Instructions:
 
@@ -45,15 +43,43 @@ Source the virtual environment installed:
 workon deeptam_py
 ```
 
-## Examples:
+## Usage:
 
 ### Single Camera DeepTAM
+
+__Input Arguments:__ 
+
+* `--config_file` or `-f`: set to the path of configuration YAML file
+*  `--weights` or `-w`: set to the path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)
+*  `--tracking_network` or `-n`: set to the path of the tracking network (default: path to module deeptam_tracker.models.networks)
+*  `--disable_vis` or `-v`: disable the frame-by-frame visualization for speed-up
+
+__Example:__ 
 
 To run DeepTAM with a single camera setup, run:
 ```bash
 cd scripts
 # run the python script
 python single_camera_tracking.py \
-    --data_dir ../resources/data/rgbd_dataset_freiburg1_desk \
+    --config_file ../resources/hyperparameters/freiburg1_config.yaml \
+    --weights ../resources/weights/deeptam_tracker_weights/snapshot-300000
+```
+
+### Multi Camera DeepTAM
+
+__Input Arguments:__ 
+* `--config_file` or `-f`: set to the path of directory containing all the configuration YAML files for each camera
+*  `--weights` or `-w`: set to the path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)
+*  `--tracking_network` or `-n`: set to the path of the tracking network (default: path to module deeptam_tracker.models.networks)
+*  `--disable_vis` or `-v`: disable the frame-by-frame visualization for speed-up
+
+__Example:__ 
+
+To run DeepTAM with a multi camera setup, run:
+```bash
+cd scripts
+# run the python script
+python single_camera_tracking.py \
+    --config_file ../resources/hyperparameters/freiburg1_config.yaml \
     --weights ../resources/weights/deeptam_tracker_weights/snapshot-300000
 ```

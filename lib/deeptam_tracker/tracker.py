@@ -4,6 +4,8 @@ from deeptam_tracker.utils.rotation_conversion import *
 from deeptam_tracker.utils import message as mg
 
 
+PRINT_PREFIX = '[TRACKER]: '
+
 class Tracker:
     """This class implements a sequence tracker using TrackerCore. It allows for new key frame generation.
     
@@ -13,9 +15,7 @@ class Tracker:
                  tracking_module_path,
                  checkpoint,
                  intrinsics,
-                 key_valid_pixel_ratio_threshold=0.5,
-                 key_angle_deg_threshold=6.0,
-                 key_distance_threshold=0.15,
+                 tracking_parameters=None,
                  init_pose=Pose_identity()):
         """
         tracking_module_path: str 
@@ -27,25 +27,31 @@ class Tracker:
         intrinsics: np.array
             Normalized intrinsics
 
-        key_valid_pixel_ratio_threshold: float
-            Threshold for creating a new key frame
-
-        key_angle_deg_threshold: float
-            Threshold for creating a new key frame.
-
-        key_distance_threshold: float
-            Threshold for creating a new key frame.
+        tracking_parameters: dict
+            Dictionary containing parameters for creating new frames,
+            keys = [key_valid_pixel_ratio_threshold, key_angle_deg_threshold, key_distance_threshold]
             
         init_pose: Pose
             Initialized pose for the starting frame
 
         """
+        # use default parameters for tracking if no input provided
+        if tracking_parameters is None:
+            mg.print_warn(PRINT_PREFIX, "[WARN] Using default parameters for creating new keyframes.")
+            tracking_parameters = {
+                'key_valid_pixel_ratio_threshold': 0.5,
+                'key_angle_deg_threshold': 6.0,
+                'key_distance_threshold': 0.15
+            }
+        else:
+            assert isinstance(tracking_parameters, dict)
+
         self._tracker_core = TrackerCore(tracking_module_path, checkpoint, intrinsics)
         self._image_width = self._tracker_core.image_width
         self._image_height = self._tracker_core.image_height
-        self._key_valid_pixel_ratio_threshold = key_valid_pixel_ratio_threshold
-        self._key_angle_deg_threshold = key_angle_deg_threshold
-        self._key_distance_threshold = key_distance_threshold
+        self._key_valid_pixel_ratio_threshold = tracking_parameters['key_valid_pixel_ratio_threshold']
+        self._key_angle_deg_threshold = tracking_parameters['key_angle_deg_threshold']
+        self._key_distance_threshold = tracking_parameters['key_distance_threshold']
         self._init_pose = init_pose
 
         self.clear()
@@ -114,21 +120,23 @@ class Tracker:
         position_diff = self.position_diff(key_pose, new_pose)
         if not set_new_keyframe and position_diff > self._key_distance_threshold:
             set_new_keyframe = True
-            mg.print_notify('setting new key frame because of distance threshold {0}'.format(position_diff))
+            mg.print_notify(PRINT_PREFIX, 'setting new key frame because of distance threshold {0}'.format(position_diff))
 
         angle_diff = self.angle_diff(key_pose, new_pose)
         if not set_new_keyframe and angle_diff > self._key_angle_deg_threshold:
             set_new_keyframe = True
-            mg.print_notify('setting new key frame because of angle threshold {0}'.format(angle_diff))
+            mg.print_notify(PRINT_PREFIX, 'setting new key frame because of angle threshold {0}'.format(angle_diff))
 
-        if not set_new_keyframe and self._tracker_core._valid_warped_pixels / self._tracker_core._key_valid_depth_pixels < self._key_valid_pixel_ratio_threshold:
-            set_new_keyframe = True
-            mg.print_notify('setting new key frame because of valid pixel ratio threshold less than {0}'.format(self._key_valid_pixel_ratio_threshold))
+        if self._tracker_core._key_valid_depth_pixels != 0:
+            if not set_new_keyframe and self._tracker_core._valid_warped_pixels / self._tracker_core._key_valid_depth_pixels < self._key_valid_pixel_ratio_threshold:
+                set_new_keyframe = True
+                mg.print_notify(PRINT_PREFIX, 'setting new key frame because of valid pixel ratio threshold less than {0}'.format(
+                    self._key_valid_pixel_ratio_threshold))
 
         if set_new_keyframe:
             if depth is None:
                 set_new_keyframe = False
-                mg.print_warn("cannot set new key frame because of missing depth")
+                mg.print_warn(PRINT_PREFIX, "[WARNING] cannot set new key frame because of missing depth")
 
         return set_new_keyframe
 
@@ -164,7 +172,7 @@ class Tracker:
                 'warped_image': None,
             }
         else:
-            mg.print_warn("cannot set new key frame because of missing depth")
+            mg.print_warn(PRINT_PREFIX, "[WARNING] cannot set new key frame because of missing depth")
             return {
                 'pose': self._init_pose,
                 'keyframe': False,
@@ -238,7 +246,7 @@ class TrackerCore:
         """
         del self._session
         tf.reset_default_graph()
-        mg.print_notify("Tensorflow graph reseted")
+        mg.print_notify(PRINT_PREFIX, "Tensorflow graph reseted")
 
     @property
     def image_width(self):
@@ -287,7 +295,7 @@ class TrackerCore:
         t_relative = pose_guess.t - R_relative * self._key_pose.t
 
         feed_dict = {
-            self._tracking_net.placeholders['prev_rotation']: rotation_matrix_to_angleaxis(R_relative)[np.newaxis,:].astype(np.float32),
+            self._tracking_net.placeholders['prev_rotation']: rotation_matrix_to_angleaxis(R_relative)[np.newaxis, :].astype(np.float32),
             self._tracking_net.placeholders['prev_translation']: np.array(t_relative, dtype=np.float32)[np.newaxis, :],
             self._tracking_net.placeholders['image_key']: self._key_image,
             self._tracking_net.placeholders['depth_key']: self._key_depth,

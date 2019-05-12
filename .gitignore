@@ -1,9 +1,11 @@
 # Folders
-airsim_dataset
 **/resources/data/*
 **/resources/weights/*
 !**/resources/data/download_testdata_rgbd_freiburg1.sh
 !**/resources/weights/download_weights.sh
+
+# ROS
+*.bag
 
 # Pycharm
 .idea
