@@ -50,6 +50,13 @@ Source the virtual environment installed:
 workon deeptam_py
 ```
 
+Download the pre-trained weights for the DeepTAM tracking network:
+```bash
+cd resources/weights
+chmod +x download_weights.sh
+./download_weights.sh
+``` 
+
 ## Usage:
 
 ### Single Camera DeepTAM
@@ -63,7 +70,14 @@ __Input Arguments:__
 
 __Example:__ 
 
-To run DeepTAM with a single camera setup, run:
+* Download the RGBD Freiburg1 Desk Sequence:
+```bash
+cd resources/data
+chmod +x download_testdata_rgbd_freiburg1.sh
+./download_testdata_rgbd_freiburg1.sh
+```
+
+* To run DeepTAM with a single camera setup, run:
 ```bash
 cd scripts
 # run the python script
@@ -82,10 +96,10 @@ __Input Arguments:__
 
 __Example:__ 
 
-Download the AirSim dataset from [here](https://polybox.ethz.ch/index.php/s/Kpp7Nfa0AbCq8e1) and copy it into the `resources/data` directory. (NOTE: The name of the 
-directory should be `airsim`.) 
+* Download the AirSim dataset from [here](https://polybox.ethz.ch/index.php/s/Kpp7Nfa0AbCq8e1) and copy it into the `resources/data` directory. Ensure that the name of the 
+directory is `airsim`. 
 
-To run DeepTAM with a multi camera setup, run:
+* To run DeepTAM with a multi camera setup, run:
 ```bash
 cd scripts
 # run the python script

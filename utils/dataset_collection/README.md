@@ -111,4 +111,3 @@ catkin build
 roslaunch apriltags2_ros cam_tracking.launch
 rosrun tf_writer tfwriter_node 
 ```
-
