@@ -27,10 +27,17 @@ The text files be similar to the ones present in [_TUM RGBD sequences_](https://
 * __Images__: Data is the file path relative to the sequence directory name specified in the `config.yaml` file
 * __Groundtruth__: Data is the cartesian position and quaternion orientation of that particular camera (in world/camera frame)
 
+#### Single Camera Setup
+
 An example YAML configuration file for the RGBD Freiburg1 Desk Sequence is present [here](resources/hyperparameters/freiburg1_config.yaml). 
 
 __NOTE:__ Please ensure that the sequence directory and camera intrinsics are correctly modified according to the dataset. 
 
+#### Multiple Cameras Setup
+
+For multi-camera, an additional YAML file needs to be written which would contain the path to all the configuration files 
+for all the cameras in the system. An example for the same for AirSim dataset is available [here](resources/hyperparameters/airsim/airsim_config.yaml).
+ 
 ## Installation Instructions:
 
 To install the virtual environment and all required dependencies, run:
@@ -68,18 +75,21 @@ python single_camera_tracking.py \
 ### Multi Camera DeepTAM
 
 __Input Arguments:__ 
-* `--config_file` or `-f`: set to the path of directory containing all the configuration YAML files for each camera
+* `--config_file` or `-f`: set to the path of YAML file for multi-camera 
 *  `--weights` or `-w`: set to the path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)
 *  `--tracking_network` or `-n`: set to the path of the tracking network (default: path to module deeptam_tracker.models.networks)
 *  `--disable_vis` or `-v`: disable the frame-by-frame visualization for speed-up
 
 __Example:__ 
 
+Download the AirSim dataset from [here](https://polybox.ethz.ch/index.php/s/Kpp7Nfa0AbCq8e1) and copy it into the `resources/data` directory. (NOTE: The name of the 
+directory should be `airsim`.) 
+
 To run DeepTAM with a multi camera setup, run:
 ```bash
 cd scripts
 # run the python script
-python single_camera_tracking.py \
-    --config_file ../resources/hyperparameters/freiburg1_config.yaml \
+ python multi_camera_tracking.py \
+    --config_file ../resources/hyperparameters/airsim/airsim_config.yaml \
     --weights ../resources/weights/deeptam_tracker_weights/snapshot-300000
 ```
