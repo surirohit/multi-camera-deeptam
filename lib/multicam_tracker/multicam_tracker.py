@@ -96,12 +96,15 @@ class MultiCamTracker:
 
         return pr_poses_list, self.gt_poses, frame_list, result_list
 
+    @property
     def get_sequence_length(self):
         return self.cameras_list[0].get_sequence_length()
 
+    @property
     def get_gt_poses_list(self):
         return self.gt_poses
 
+    @property
     def get_timestamps_list(self):
         return self.timestamps_list
 
