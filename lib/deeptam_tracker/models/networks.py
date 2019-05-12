@@ -6,6 +6,7 @@ from deeptam_tracker.models.helpers import *
 class TrackingNetwork(TrackingNetworkBase):
 
     def __init__(self, batch_size=1):
+        super(TrackingNetwork, self).__init__()
         # create place holders and add to the dictionary
         self._placeholders = {
             'depth_key': tf.placeholder(tf.float32, shape=(batch_size, 1, 240, 320)),

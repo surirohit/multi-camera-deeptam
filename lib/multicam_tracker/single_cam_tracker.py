@@ -83,7 +83,6 @@ class SingleCamTracker:
 
         return frame, result, self.sequence.get_timestamp(frame_idx), self.tracker.poses
 
-    @property
     def get_sequence_length(self):
         return self.sequence.get_sequence_length()
 
