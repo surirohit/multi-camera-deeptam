@@ -4,15 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import ImageChops
 from mpl_toolkits.mplot3d import Axes3D
-import yaml
 
-from deeptam_tracker.tracker import Tracker
 import deeptam_tracker.models.networks
-from deeptam_tracker.evaluation.rgbd_sequence import RGBDSequence
 from deeptam_tracker.evaluation.metrics import rgbd_rpe
 from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_array_to_colorimg
 from deeptam_tracker.utils import message as mg
 
+from multicam_tracker.utils.parser import load_multi_cam_config_yaml
 from multicam_tracker.multicam_tracker import MultiCamTracker
 
 PRINT_PREFIX = '[MAIN]: '
@@ -148,7 +146,9 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     ## initialization
     # initialize the multi-camera sequence
 
-    multicam_tracker = MultiCamTracker(config['camera_configs'], tracking_module_path, checkpoint)
+    multicam_tracker = MultiCamTracker(config['camera_configs'], tracking_module_path, checkpoint,
+                                       seq_name=config['seq_name'])
+    multicam_tracker.startup()
 
     axes_list = [init_visualization(title="DeepTAM Tracker Cam %d" % idx) \
                  for idx in range(len(config['camera_configs']))]
@@ -186,22 +186,6 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     multicam_tracker.delete_tracker()
 
 
-def load_yaml(filename):
-    data = None
-
-    try:
-        with open(filename, 'r') as stream:
-            try:
-                data = yaml.safe_load(stream)
-            except yaml.YAMLError as e:
-                print(PRINT_PREFIX, e)
-                exit()
-    except FileNotFoundError:
-        print(PRINT_PREFIX, "Config file not found")
-        exit()
-    return data
-
-
 def main(args):
     visualization = not args.disable_vis
     config_file = args.config_file
@@ -218,7 +202,7 @@ def main(args):
         tracking_module_path = os.path.realpath(tracking_module_path)
 
     # read the config YAML file and create a dictionary out of it
-    config = load_yaml(config_file)
+    config = load_multi_cam_config_yaml(config_file)
 
     track_multicam_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
                                  visualization=visualization)
