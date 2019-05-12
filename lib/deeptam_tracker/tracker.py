@@ -127,10 +127,11 @@ class Tracker:
             set_new_keyframe = True
             mg.print_notify(PRINT_PREFIX, 'setting new key frame because of angle threshold {0}'.format(angle_diff))
 
-        if not set_new_keyframe and self._tracker_core._valid_warped_pixels / self._tracker_core._key_valid_depth_pixels < self._key_valid_pixel_ratio_threshold:
-            set_new_keyframe = True
-            mg.print_notify(PRINT_PREFIX, 'setting new key frame because of valid pixel ratio threshold less than {0}'.format(
-                self._key_valid_pixel_ratio_threshold))
+        if self._tracker_core._key_valid_depth_pixels != 0:
+            if not set_new_keyframe and self._tracker_core._valid_warped_pixels / self._tracker_core._key_valid_depth_pixels < self._key_valid_pixel_ratio_threshold:
+                set_new_keyframe = True
+                mg.print_notify(PRINT_PREFIX, 'setting new key frame because of valid pixel ratio threshold less than {0}'.format(
+                    self._key_valid_pixel_ratio_threshold))
 
         if set_new_keyframe:
             if depth is None:
@@ -238,8 +239,7 @@ class TrackerCore:
         self._tracking_net_output = self._tracking_net.build_net(**self._tracking_net.placeholders)
         optimistic_restore(self._session, self._checkpoint, verbose=True)
 
-        [self._image_height, self._image_width] = self._tracking_net.placeholders['image_key'].get_shape().as_list()[
-                                                  -2:]
+        [self._image_height, self._image_width] = self._tracking_net.placeholders['image_key'].get_shape().as_list()[-2:]
 
     def __del__(self):
         """
