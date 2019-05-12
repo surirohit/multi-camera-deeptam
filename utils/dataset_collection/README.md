@@ -101,7 +101,8 @@ cp apriltags2_ros/launch/cam_tracking.launch ~/git/apriltag_ros/apriltags2_ros/l
 ```bash
 cd ~/catkin_ws/src/
 ln -s tfwriter 
-cd ..;catkin build
+cd ..
+catkin build
 ```
 
 ## Running the program
@@ -109,6 +110,5 @@ cd ..;catkin build
 ```bash
 roslaunch apriltags2_ros cam_tracking.launch
 rosrun tf_writer tfwriter_node 
- 
 ```
 
