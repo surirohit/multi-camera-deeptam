@@ -55,8 +55,7 @@ UBUNTU_VERSION=$( lsb_release -r | awk '{ print $2 }' )
 
 ### Install dependencies depending on the version of Ubuntu
 if [[ "$UBUNTU_VERSION" == "16.04" ]]; then
-#  install_system_deps_ubuntu_1604
-  echo "Already installed stuff!"
+  install_system_deps_ubuntu_1604
 else
   echo "Error: Unknown or unsupported Linux distribution."
   exit
