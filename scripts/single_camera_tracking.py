@@ -123,6 +123,35 @@ def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual)
     plt.pause(1e-9)
 
 
+def naive_pose_fusion(cams_poses):
+    '''
+    Averages the input poses of each camera provided in the list
+
+    :param cams_poses: list of list of poses for each camera
+    :return: list of poses after fusion
+    '''
+    from deeptam_tracker.utils.rotation_conversion import rotation_matrix_to_angleaxis, angleaxis_to_rotation_matrix
+    from deeptam_tracker.utils.datatypes import Vector3, Matrix3, Pose
+
+    assert isinstance(cams_poses, list)
+    assert all(len(cam_poses) == len(cams_poses[0]) for cam_poses in cams_poses)
+
+    fused_poses = []
+    num_of_poses = len(cams_poses[0])
+
+    for idx in range(num_of_poses):
+        trans = []
+        orientation_aa = []
+        for cam_num in range(len(cams_poses)):
+            trans.append(np.array(cams_poses[cam_num][idx].t))
+            orientation_aa.append(rotation_matrix_to_angleaxis(cams_poses[cam_num][idx].R))
+
+        t = np.mean(trans, axis=0)
+        R = angleaxis_to_rotation_matrix(Vector3(np.mean(orientation_aa, axis=0)))
+        fused_poses.append(Pose(R=Matrix3(R), t=Vector3(t)))
+
+    return fused_poses
+
 def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
     """Tracks a rgbd sequence using deeptam tracker
     
@@ -189,6 +218,13 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization,
     errors_rpe = rgbd_rpe(gt_poses, pr_poses, timestamps)
     mg.print_notify(PRINT_PREFIX, 'Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
         errors_rpe['translational_error.rmse']))
+
+    ## fuse the poses naively
+    fused_poses = naive_pose_fusion([gt_poses, pr_poses])
+    errors_rpe = rgbd_rpe(gt_poses, fused_poses, timestamps)
+    mg.print_notify(PRINT_PREFIX,
+                    'After fusion, frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
+                        errors_rpe['translational_error.rmse']))
 
     ## save trajectory files
     write_tum_trajectory_file(os.path.join(output_dir, sequence.cam_name, 'stamped_traj_estimate.txt'), timestamps, pr_poses)
