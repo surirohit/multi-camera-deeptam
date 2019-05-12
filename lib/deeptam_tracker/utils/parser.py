@@ -5,8 +5,9 @@ from deeptam_tracker.utils import message as mg
 
 PRINT_PREFIX = '[UTILS][PARSER]: '
 
-def load_yaml_file(config_file):
-    """Returns the dictionary created out of parsed YAML file
+
+def load_camera_config_yaml(config_file):
+    """Returns the dictionary created out of parsed YAML file for a single camera
 
     config_file: str
         Path to the configuration YAML file
@@ -27,7 +28,6 @@ def load_yaml_file(config_file):
     ## get path to directory containing the YAML file
     # if absolute path not provided then use relative path with respect to the configuration file location
     if config.get('cam_dir', None) is None or not os.path.isabs(config['cam_dir']):
-        # TODO: Rohit, can this be simplified?
         config['cam_dir'] = os.path.join(os.path.dirname(os.path.realpath(config_file)), config['cam_dir'])
 
     # throw error if directory does not exist

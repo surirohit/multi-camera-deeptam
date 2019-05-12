@@ -10,7 +10,7 @@ import deeptam_tracker.models.networks
 from deeptam_tracker.evaluation.rgbd_sequence import RGBDSequence
 from deeptam_tracker.evaluation.metrics import rgbd_rpe
 from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_array_to_colorimg
-from deeptam_tracker.utils.parser import load_yaml_file
+from deeptam_tracker.utils.parser import load_camera_config_yaml
 from deeptam_tracker.utils import message as mg
 
 PRINT_PREFIX = '[MAIN]: '
@@ -205,7 +205,7 @@ def main(args):
         tracking_module_path = os.path.realpath(tracking_module_path)
 
     # read the config YAML file and create a dictionary out of it
-    config = load_yaml_file(config_file)
+    config = load_camera_config_yaml(config_file)
 
     track_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
                         visualization=visualization)

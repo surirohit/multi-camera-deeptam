@@ -1,6 +1,8 @@
 from deeptam_tracker.evaluation.rgbd_sequence import RGBDSequence
 from deeptam_tracker.tracker import Tracker
 
+PRINT_PREFIX = '[SINGLECAM TRACKER]: '
+
 
 class SingleCamTracker:
 
@@ -19,10 +21,13 @@ class SingleCamTracker:
         assert isinstance(config, dict)
 
         self._startup = False
+        self.name = config['cam_name']
+
         self.sequence = RGBDSequence(config['cam_dir'], rgb_parameters=config['rgb_parameters'],
                                      depth_parameters=config['depth_parameters'],
                                      time_syncing_parameters=config['time_syncing_parameters'],
-                                     require_depth=require_depth, require_pose=require_pose)
+                                     cam_name=config['cam_name'], require_depth=require_depth,
+                                     require_pose=require_pose)
 
         self.intrinsics = self.sequence.get_original_normalized_intrinsics()
 
@@ -66,7 +71,8 @@ class SingleCamTracker:
             (list) poses: list of all the poses computed so far
         """
         if not self._startup:
-            raise Exception('Tracker has not been initliazed properly. Please call startup() first.')
+            raise Exception(PRINT_PREFIX +
+                            'Tracker \"%s\"has not been initialized. Please call startup() first.' % self.name)
 
         frame = self.sequence.get_dict(frame_idx,
                                        self.intrinsics,

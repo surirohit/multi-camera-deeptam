@@ -1,4 +1,4 @@
-from deeptam_tracker.utils.parser import load_yaml_file
+from deeptam_tracker.utils.parser import load_camera_config_yaml
 from multicam_tracker.single_cam_tracker import SingleCamTracker
 from deeptam_tracker.utils import message as mg
 
@@ -7,7 +7,7 @@ PRINT_PREFIX = '[MULTICAM TRACKER]: '
 
 class MultiCamTracker:
 
-    def __init__(self, config_dirs_list, tracking_module_path, checkpoint):
+    def __init__(self, config_dirs_list, tracking_module_path, checkpoint, seq_name='multi_cam'):
         """
         Create an object for accessing a multi-camera RGBD sequences
 
@@ -21,10 +21,12 @@ class MultiCamTracker:
         # about cam_i at idx i
 
         assert isinstance(config_dirs_list, list)
+        assert len(config_dirs_list) > 0
 
         self._startup = False
         self.config_dirs_list = config_dirs_list
 
+        self.seq_name = seq_name
         self.num_of_cams = len(config_dirs_list)
 
         mg.print_notify(PRINT_PREFIX, "Setting up trackers for %d cameras." % self.num_of_cams)
@@ -32,7 +34,7 @@ class MultiCamTracker:
 
         # iterate over each directory and write file path names
         for idx in range(self.num_of_cams):
-            config = load_yaml_file(config_dirs_list[idx])
+            config = load_camera_config_yaml(config_dirs_list[idx])
             self.cameras_list.append(SingleCamTracker(config, tracking_module_path, checkpoint))
 
         self.gt_poses = [[] for _ in range(self.num_of_cams)]
@@ -71,7 +73,7 @@ class MultiCamTracker:
                                       all the cameras
         """
         if not self._startup:
-            raise Exception('Tracker has not been initliazed properly. Please call startup() first.')
+            raise Exception(PRINT_PREFIX + 'Trackers have not been initialized. Please call startup() first.')
 
         pr_poses_list = [None for _ in range(self.num_of_cams)]
         frame_list = [None for _ in range(self.num_of_cams)]
