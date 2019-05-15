@@ -1,3 +1,6 @@
 [submodule "lib/lmbspecialops"]
 	path = lib/lmbspecialops
 	url = git@github.com:Mayankm96/lmbspecialops.git
+[submodule "utils/evaluation/library/rpg_trajectory_evaluation"]
+	path = utils/evaluation/library/rpg_trajectory_evaluation
+	url = git@github.com:Mayankm96/rpg_trajectory_evaluation.git

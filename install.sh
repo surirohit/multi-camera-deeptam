@@ -7,9 +7,6 @@ function install_system_deps_ubuntu_1604()
   APT_GET_FLAGS=-qq
   sudo apt update
 
-  ## GCC v4.9
-  sudo apt install $APT_GET_FLAGS gcc-4.9 g++-4.9
-
   ### Build dependencies
   sudo apt install $APT_GET_FLAGS cmake build-essential unzip
 
@@ -58,8 +55,7 @@ UBUNTU_VERSION=$( lsb_release -r | awk '{ print $2 }' )
 
 ### Install dependencies depending on the version of Ubuntu
 if [[ "$UBUNTU_VERSION" == "16.04" ]]; then
-#  install_system_deps_ubuntu_1604
-  echo "Already installed stuff!"
+  install_system_deps_ubuntu_1604
 else
   echo "Error: Unknown or unsupported Linux distribution."
   exit
@@ -77,22 +73,22 @@ printf 'export DEEPTAM_ROOT='$DEEPTAM_ROOT'\n' >> $HOME/.bashrc
 bash
 source $HOME/.bashrc
 
+### Install the python-packages
+cd $DEEPTAM_ROOT
+pip install -e .
+
 ### Install the lmbdspecial ops submodule
 git submodule init
 git submodule update
 LMBSPECIALOPS_ROOT=$DEEPTAM_ROOT/lib/lmbspecialops
 cd $LMBSPECIALOPS_ROOT
-#### change compiler version
-CC=gcc-4.9
-CXX=g++-4.9
 #### build the submodule
 mkdir build
 cd build
 cmake ..
 make
-
-### Install the python-packages
-pip install -e .
+#### add lmbspecialops to virtual environment
+add2virtualenv $LMBSPECIALOPS_ROOT/python
 
 exit
 

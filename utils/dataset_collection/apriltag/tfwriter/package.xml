@@ -6,7 +6,7 @@
   <url></url>
   <author>Fadhil Ginting</author>
   <maintainer email="gintingf@student.ethz.ch">Fadhil Ginting</maintainer>
-  <license>Propriatary</license>
+  <license>Proprietary</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>message_generation</build_depend>

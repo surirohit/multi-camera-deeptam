@@ -4,6 +4,7 @@ from PIL import Image
 from skimage.transform import resize
 import numpy as np
 
+PRINT_PREFIX = '[UTILS][VIEW-UTILS]: '
 
 def safe_crop_image(image, box, fill_value):
     """crops an image and adds a border if necessary
@@ -129,7 +130,7 @@ def adjust_intrinsics(view, K_new, width_new, height_new):
     y1 = y0 + int(height_new)
 
     if x0 < 0 or y0 < 0 or x1 > width_resize or y1 > height_resize:
-        mg.print_warn('Warning: Adjusting intrinsics adds a border to the image')
+        mg.print_warn(PRINT_PREFIX, '[WARNING] Adjusting intrinsics adds a border to the image')
         img_new = safe_crop_image(img_resize, (x0, y0, x1, y1), (127, 127, 127))
         if not depth_resize is None:
             depth_new = safe_crop_array2d(depth_resize, (x0, y0, x1, y1), 0).astype(np.float32)

@@ -5,14 +5,13 @@ import matplotlib.pyplot as plt
 from PIL import ImageChops
 from mpl_toolkits.mplot3d import Axes3D
 
-from deeptam_tracker.tracker import Tracker
 import deeptam_tracker.models.networks
-from deeptam_tracker.evaluation.rgbd_sequence import RGBDSequence
 from deeptam_tracker.evaluation.metrics import rgbd_rpe
 from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_array_to_colorimg
-from deeptam_tracker.utils.parser import load_camera_config_yaml
 from deeptam_tracker.utils import message as mg
 
+from multicam_tracker.utils.parser import load_multi_cam_config_yaml
+from multicam_tracker.multicam_tracker import MultiCamTracker
 from multicam_tracker.utils.parser import write_tum_trajectory_file
 
 PRINT_PREFIX = '[MAIN]: '
@@ -23,7 +22,7 @@ def parse_args():
     Parses CLI arguments applicable for this helper script
     """
     # Create parser instance
-    parser = argparse.ArgumentParser(description="Run DeepTAM on a monocular camera sequence.")
+    parser = argparse.ArgumentParser(description="Run DeepTAM on a multi-camera sequence.")
     # Define arguments
     parser.add_argument('--config_file', '-f', metavar='',
                         help='set to the path to configuration YAML file')
@@ -123,118 +122,82 @@ def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual)
     plt.pause(1e-9)
 
 
-def naive_pose_fusion(cams_poses):
-    '''
-    Averages the input poses of each camera provided in the list
+def update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list):
+    for idx in range(len(axes_list)):
+        update_visualization(axes_list[idx],
+                             pr_poses_list[idx],
+                             gt_poses_list[idx],
+                             frame_list[idx]['image'],
+                             result_list[idx]['warped_image'])
 
-    :param cams_poses: list of list of poses for each camera
-    :return: list of poses after fusion
-    '''
-    from deeptam_tracker.utils.rotation_conversion import rotation_matrix_to_angleaxis, angleaxis_to_rotation_matrix
-    from deeptam_tracker.utils.datatypes import Vector3, Matrix3, Pose
 
-    assert isinstance(cams_poses, list)
-    assert all(len(cam_poses) == len(cams_poses[0]) for cam_poses in cams_poses)
-
-    fused_poses = []
-    num_of_poses = len(cams_poses[0])
-
-    for idx in range(num_of_poses):
-        trans = []
-        orientation_aa = []
-        for cam_num in range(len(cams_poses)):
-            trans.append(np.array(cams_poses[cam_num][idx].t))
-            orientation_aa.append(rotation_matrix_to_angleaxis(cams_poses[cam_num][idx].R))
-
-        t = np.mean(trans, axis=0)
-        R = angleaxis_to_rotation_matrix(Vector3(np.mean(orientation_aa, axis=0)))
-        fused_poses.append(Pose(R=Matrix3(R), t=Vector3(t)))
-
-    return fused_poses
-
-def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
-    """Tracks a rgbd sequence using deeptam tracker
+def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
+    """Tracks a multicam rgbd sequence using deeptam tracker
     
     checkpoint: str
         directory to the weights
     
     config: dict
-        dictionary containing all the parameters for rgbd sequence and tracker
+        dictionary containing the list of camera config files
 
     tracking_module_path: str
         file which contains the model class
         
     visualization: bool
 
+
     output_dir: str
         directory path save the output data
     """
 
-    ### initialization
-    # initialize the camera sequence
-    sequence = RGBDSequence(config['cam_dir'], rgb_parameters=config['rgb_parameters'],
-                            depth_parameters=config['depth_parameters'],
-                            time_syncing_parameters=config['time_syncing_parameters'])
-    intrinsics = sequence.get_original_normalized_intrinsics()
+    ## initialization
+    # initialize the multi-camera sequence
 
-    # initialize corresponding tracker
-    tracker = Tracker(tracking_module_path, checkpoint, intrinsics, tracking_parameters=config['tracking_parameters'])
+    multicam_tracker = MultiCamTracker(config['camera_configs'], tracking_module_path, checkpoint,
+                                       seq_name=config['seq_name'])
+    multicam_tracker.startup()
 
-    gt_poses = []
-    timestamps = []
-    key_pr_poses = []
-    key_gt_poses = []
-    key_timestamps = []
+    axes_list = [init_visualization(title="DeepTAM Tracker Cam %d" % idx) \
+                 for idx in range(len(config['camera_configs']))]
 
-    axes = init_visualization()
+    # Putting in higher scope so that don't need to call function again after loop
+    pr_poses_list = None
+    gt_poses_list = None
+    frame_list = None
+    result_list = None
 
-    frame = sequence.get_dict(0, intrinsics, tracker.image_width, tracker.image_height)
-    pose0_gt = frame['pose']
-    tracker.clear()
-    # WIP: If gt_poses is aligned such that it starts from identity pose, you may comment this line
-    # TODO: @Rohit, should we make this base-to-cam transformation?
-    tracker.set_init_pose(pose0_gt)
+    for frame_idx in range(multicam_tracker.get_sequence_length()):
 
-    ## track a sequence
-    result = {}
-    for frame_idx in range(sequence.get_sequence_length()):
         print(PRINT_PREFIX, 'Input frame number: {}'.format(frame_idx))
-        frame = sequence.get_dict(frame_idx, intrinsics, tracker.image_width, tracker.image_height)
-        timestamps.append(sequence.get_timestamp(frame_idx))
-        result = tracker.feed_frame(frame['image'], frame['depth'])
-        gt_poses.append(frame['pose'])
-        pr_poses = tracker.poses
+        pr_poses_list, gt_poses_list, frame_list, result_list = \
+            multicam_tracker.update(frame_idx)
 
+        # TODO: visualization
         if visualization:
-            update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'])
+            update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list)
 
-        if result['keyframe']:
-            key_pr_poses.append(tracker.poses[-1])
-            key_gt_poses.append(frame['pose'])
-            key_timestamps.append(sequence.get_timestamp(frame_idx))
+    gt_poses_list = multicam_tracker.get_gt_poses_list()
+    timestamps_list = multicam_tracker.get_timestamps_list()
 
-    ## evaluation
-    pr_poses = tracker.poses
-    errors_rpe = rgbd_rpe(gt_poses, pr_poses, timestamps)
-    mg.print_notify(PRINT_PREFIX, 'Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
-        errors_rpe['translational_error.rmse']))
+    for idx in range(multicam_tracker.num_of_cams):
+        ## evaluation
+        errors_rpe = rgbd_rpe(gt_poses_list[idx], pr_poses_list[idx], timestamps_list[idx])
+        print(PRINT_PREFIX, "Camera %d:" % idx)
+        mg.print_notify('Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
+            errors_rpe['translational_error.rmse']))
 
-    ## fuse the poses naively
-    fused_poses = naive_pose_fusion([gt_poses, pr_poses])
-    errors_rpe = rgbd_rpe(gt_poses, fused_poses, timestamps)
-    mg.print_notify(PRINT_PREFIX,
-                    'After fusion, frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
-                        errors_rpe['translational_error.rmse']))
+        ## save trajectory files
+        name = multicam_tracker.cameras_list[idx].name
+        write_tum_trajectory_file(os.path.join(output_dir, name, 'stamped_traj_estimate.txt'), timestamps_list[idx],
+                                  pr_poses_list[idx])
+        write_tum_trajectory_file(os.path.join(output_dir, name, 'stamped_groundtruth.txt'), timestamps_list[idx],
+                                  gt_poses_list[idx])
 
-    ## save trajectory files
-    write_tum_trajectory_file(os.path.join(output_dir, sequence.cam_name, 'stamped_traj_estimate.txt'), timestamps, pr_poses)
-    write_tum_trajectory_file(os.path.join(output_dir, sequence.cam_name, 'stamped_groundtruth.txt'), timestamps, gt_poses)
-
-    ## update visualization
-    update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'])
+    # TODO: visualization
+    update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list)
     plt.show()
 
-    del tracker
+    multicam_tracker.delete_tracker()
 
 
 def main(args):
@@ -254,11 +217,11 @@ def main(args):
         tracking_module_path = os.path.realpath(tracking_module_path)
 
     # read the config YAML file and create a dictionary out of it
-    config = load_camera_config_yaml(config_file)
+    config = load_multi_cam_config_yaml(config_file)
     os.makedirs(output_dir, exist_ok=True)
 
-    track_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
-                        visualization=visualization, output_dir=output_dir)
+    track_multicam_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
+                                 visualization=visualization, output_dir=output_dir)
 
 
 if __name__ == "__main__":
