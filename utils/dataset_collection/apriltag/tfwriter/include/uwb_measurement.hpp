@@ -44,6 +44,7 @@ private:
     short int buffer_minimum;
     bool call_DistanceMeasurement;
     float uwb_std;
+    double timestamp;
 
     centralized_formation_estimator::StampedDistance msg_uwb;
 

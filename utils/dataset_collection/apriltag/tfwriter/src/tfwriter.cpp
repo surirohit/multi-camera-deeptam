@@ -37,7 +37,7 @@ int main(int argc, char **argv)
       try {
           //get tf camera to tag 15
           tfstamped = tfBuffer.lookupTransform("camera",
-          "tag_15", ros::Time(0));
+          "tag_19", ros::Time(0));
 
           pos_cam_tag.x()=tfstamped.transform.translation.x;
           pos_cam_tag.y()=tfstamped.transform.translation.y;
@@ -46,9 +46,10 @@ int main(int argc, char **argv)
           rot_cam_tag.vec() << tfstamped.transform.rotation.x,
                   tfstamped.transform.rotation.y,
                   tfstamped.transform.rotation.z;
+          long int timestamp_sec = tfstamped.header.stamp.sec;
+          long int timestamp_nsec = tfstamped.header.stamp.nsec;
 
-//          ROS_INFO_STREAM(pos_cam_tag.x()<<" "<<pos_cam_tag.y());
-//          ROS_INFO_STREAM(tfstamped.transform.translation.x<<" "<<tfstamped.transform.translation.y);
+          ROS_INFO_STREAM(tfstamped.transform.translation.x<<" "<<tfstamped.transform.translation.y<<" "<<tfstamped.transform.translation.z);
 
           //Get 4x4 transform
           pose_cam_tag = pos_cam_tag * rot_cam_tag;
@@ -56,15 +57,12 @@ int main(int argc, char **argv)
           pose_cam_tag = pose_cam_tag.inverse();
           Eigen::Quaterniond rot_tag_cam(pose_cam_tag.rotation());
 
-
-          myfile << timecounter << " "
+          myfile << timestamp_sec <<"" << timestamp_nsec << " "
                  << pose_cam_tag.translation()[0] << " " << pose_cam_tag.translation()[1] << " " << pose_cam_tag.translation()[2] << " "
                  << rot_tag_cam.x() << " " << rot_tag_cam.y() << " " << rot_tag_cam.z() << " " << rot_tag_cam.w()
                  << "\n";
 
           timecounter++;
-
-
 
           }
       catch (tf2::TransformException &exception) {
