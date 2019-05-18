@@ -126,12 +126,18 @@ class RGBDSequence:
             self.matches_depth_pose.append(timestamps_sync)
 
         # make sure the initial frame has a depth map and a pose
-        while self.matches_depth_pose[0]['timestamp_depth'] is None or self.matches_depth_pose[0][
+        if not self.matches_depth_pose:
+            del self.matches_depth_pose
+            self.seq_len = len(self.matches_depth_dict)
+            mg.print_warn(PRINT_PREFIX, 'No ground truth information for pose estimation comparison')
+        else:
+            while self.matches_depth_pose[0]['timestamp_depth'] is None or self.matches_depth_pose[0][
             'timestamp_pose'] is None:
-            del self.matches_depth_pose[0]
+                del self.matches_depth_pose[0]
+            # get the sequence length after processing
+            self.seq_len = len(self.matches_depth_pose)
 
-        # get the sequence length after processing
-        self.seq_len = len(self.matches_depth_pose)
+
         mg.print_notify(PRINT_PREFIX, "Length of the synced image sequence: %d" % self.seq_len)
 
         # open first matched image to get the original image size
@@ -251,7 +257,7 @@ class RGBDSequence:
 
         frame: int
             The rgb frame number
-        
+
         normalized_intrinsics: np.array or list
             Normalized intrinsics. Default is sun3d
 
@@ -271,7 +277,7 @@ class RGBDSequence:
 
         frame: int
             The rgb frame number
-        
+
         normalized_intrinsics: np.array or list
             Normalized intrinsics. Default is sun3d
 
@@ -292,7 +298,7 @@ class RGBDSequence:
 
         frame: int
             The rgb frame number
-        
+
         normalized_intrinsics: np.array or list
             Normalized intrinsics. Default is sun3d
 
@@ -312,7 +318,7 @@ class RGBDSequence:
     def get_dict(self, frame, normalized_intrinsics=None, width=128, height=96):
         """Returns image, depth and pose as a dict of numpy arrays
         The depth is the inverse depth.
-        
+
         frame: int
             The rgb frame number
 
