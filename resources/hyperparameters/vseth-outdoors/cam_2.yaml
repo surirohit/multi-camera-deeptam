@@ -1,0 +1,45 @@
+# name of the sequence
+cam_name: 'cam_2'
+
+# data directory
+# provide the absolute path (i.e. /home/<name>/...) or a relative path with respect to location of this YAML file
+cam_dir: '../../data/vseth-outdoors/cam_2'
+
+# rgb camera parameters
+rgb_parameters:
+  - f_x: 444
+  - f_y: 444
+  - c_x: 240
+  - c_y: 180
+  - width: 480
+  - height: 360
+
+# depth camera parameters
+depth_parameters:
+  - min: 0.2              # minimum depth (in meter)
+  - max: 5.0              # maximum depth (in meter)
+  - scaling: 5000         # rescaling of depth images
+
+# performing time syncing operation
+time_syncing_parameters:
+  - max_difference: 0.02   # search radius for candidate generation
+  - offset: 0.0            # time offset (e.g., to model the delay between the sensors)
+
+# tracking parameters
+tracking_parameters:       # threshold values for creating a new key frame
+  - key_valid_pixel_ratio_threshold: 0.5
+  - key_angle_deg_threshold: 6.0
+  - key_distance_threshold: 0.15
+
+# base_to_camera transformation
+base_name: 'base'           # name of base frame
+base_to_cam_pose:
+  - translation:            # cartesian coordinates
+    - x: 0
+    - y: 0
+    - z: 0
+  - orientation:            # quaternion orientation
+    - w: 1
+    - x: 0
+    - y: 0
+    - z: 0
