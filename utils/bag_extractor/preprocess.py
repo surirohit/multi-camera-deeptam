@@ -100,14 +100,14 @@ def main():
         shutil.copy(os.path.join(args.input_path,cam,'calib.yaml'),os.path.join(args.output_path,cam,'calib.yaml'))
 
         
-        # print("[INFO] Starting folder: %s"%os.path.join(args.input_path,cam, 'rgb'))
-        # #For all rgb
-        # rgb_list = os.listdir(os.path.join(args.input_path,cam, 'rgb'))
-        # for rgb_file in rgb_list:
-        #     im=cv2.imread(os.path.join(args.input_path,cam, 'rgb',rgb_file))
-        #     im_new = crop_rgb_image(im, crop_center)
-        #     cv2.imwrite(os.path.join(args.output_path,cam, 'rgb',rgb_file), im_new)
-        #     cv2.waitKey(1)
+        print("[INFO] Starting folder: %s"%os.path.join(args.input_path,cam, 'rgb'))
+        #For all rgb
+        rgb_list = os.listdir(os.path.join(args.input_path,cam, 'rgb'))
+        for rgb_file in rgb_list:
+            im=cv2.imread(os.path.join(args.input_path,cam, 'rgb',rgb_file))
+            im_new = crop_rgb_image(im, crop_center)
+            cv2.imwrite(os.path.join(args.output_path,cam, 'rgb',rgb_file), im_new)
+            cv2.waitKey(1)
 
         print("[INFO] Starting folder: %s"%os.path.join(args.input_path,cam, 'depth'))
         #For all depth
