@@ -36,12 +36,14 @@ def parse_args():
                         default=None)
     parser.add_argument('--disable_vis', '-v', help='disable the frame-by-frame visualization for speed-up',
                         action='store_true')
+    parser.add_argument('--enable_gt', '-e', help='Enable the ground truth', default=False)
+
     # Retrieve arguments
     args = parser.parse_args()
     return args
 
 
-def init_visualization(title='DeepTAM Tracker'):
+def init_visualization(enable_gt, title='DeepTAM Tracker'):
     """Initializes a simple visualization for tracking
     
     title: str
@@ -55,11 +57,13 @@ def init_visualization(title='DeepTAM Tracker'):
              'r',
              label='Prediction')
 
-    ax1.plot([], [], [],
-             'g',
-             label='Ground truth')
+    if enable_gt:
+        ax1.plot([], [], [],
+                'g',
+                label='Ground truth')
+
     ax1.legend()
-    ax1.set_zlim(0.5, 1.8)
+    # ax1.set_zlim(0.5, 1.8)
     ax1.set_title('Trajectory')
 
     ax2 = fig.add_subplot(2, 2, 2)
@@ -81,7 +85,7 @@ def init_visualization(title='DeepTAM Tracker'):
     return [ax1, ax2, ax3, ax4]
 
 
-def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual):
+def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual, enable_gt):
     """ Updates the visualization for tracking
     
     axes: a list of plt.axes
@@ -100,11 +104,12 @@ def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual)
                  'r',
                  label='Prediction')
 
-    axes[0].plot(np.array([x.t[0] for x in gt_poses_c2w]),
-                 np.array([x.t[1] for x in gt_poses_c2w]),
-                 np.array([x.t[2] for x in gt_poses_c2w]),
-                 'g',
-                 label='Ground truth')
+    if enable_gt:
+        axes[0].plot(np.array([x.t[0] for x in gt_poses_c2w]),
+                    np.array([x.t[1] for x in gt_poses_c2w]),
+                    np.array([x.t[2] for x in gt_poses_c2w]),
+                    'g',
+                    label='Ground truth')
 
     if image_cur_virtual is not None:
         image_cur = convert_array_to_colorimg(image_cur.squeeze())
@@ -152,7 +157,7 @@ def naive_pose_fusion(cams_poses):
 
     return fused_poses
 
-def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
+def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir, enable_gt):
     """Tracks a rgbd sequence using deeptam tracker
     
     checkpoint: str
@@ -186,7 +191,7 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization,
     key_gt_poses = []
     key_timestamps = []
 
-    axes = init_visualization()
+    axes = init_visualization(enable_gt)
 
     frame = sequence.get_dict(0, intrinsics, tracker.image_width, tracker.image_height)
     pose0_gt = frame['pose']
@@ -206,7 +211,7 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization,
         pr_poses = tracker.poses
 
         if visualization:
-            update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'])
+            update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'], enable_gt)
 
         if result['keyframe']:
             key_pr_poses.append(tracker.poses[-1])
@@ -231,7 +236,7 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization,
     write_tum_trajectory_file(os.path.join(output_dir, sequence.cam_name, 'stamped_groundtruth.txt'), timestamps, gt_poses)
 
     ## update visualization
-    update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'])
+    update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'], enable_gt)
     plt.show()
 
     del tracker
@@ -243,6 +248,7 @@ def main(args):
     tracking_module_path = args.tracking_network
     checkpoint = os.path.realpath(args.weights)
     output_dir = os.path.abspath(args.output_dir)
+    enable_gt = args.enable_gt
 
     # read the tracking network path :O
     if tracking_module_path is None:
@@ -258,7 +264,7 @@ def main(args):
     os.makedirs(output_dir, exist_ok=True)
 
     track_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
-                        visualization=visualization, output_dir=output_dir)
+                        visualization=visualization, output_dir=output_dir, enable_gt=enable_gt)
 
 
 if __name__ == "__main__":

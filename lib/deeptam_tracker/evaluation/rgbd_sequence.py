@@ -126,8 +126,7 @@ class RGBDSequence:
             self.matches_depth_pose.append(timestamps_sync)
 
         # make sure the initial frame has a depth map and a pose
-        if not self.matches_depth_pose:
-            del self.matches_depth_pose
+        if not any([temp['timestamp_pose'] for temp in self.matches_depth_pose]):
             self.seq_len = len(self.matches_depth_dict)
             mg.print_warn(PRINT_PREFIX, 'No ground truth information for pose estimation comparison')
         else:
