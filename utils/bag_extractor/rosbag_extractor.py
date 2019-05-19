@@ -15,7 +15,7 @@ from cv_bridge import CvBridge, CvBridgeError
 ##############################################
 ####### CONFIGURATION FOR TTHE SCRIPT ########
 ##############################################
-CAM_NUM_IDXS = [0, 1, 2, 3, 4, 5, 6, 7, 9]
+CAM_NUM_IDXS = [0, 2, 4, 6]
 RECORD_CAM_RGB = True
 RECORD_CAM_INFO = False
 RECORD_CAM_DEPTH = False
@@ -38,6 +38,9 @@ class CameraIndexBag:
         """
         self.idx = camera_idx
         self.output_path = os.path.join(os.path.abspath(output_path), "cam_%d" % self.idx)
+        
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
 
         # topic names associated to that camera in the bag file
         self.topics = []
