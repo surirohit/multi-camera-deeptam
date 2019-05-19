@@ -42,7 +42,7 @@ class CameraIndexBag:
         # topic names associated to that camera in the bag file
         self.topics = []
         if RECORD_CAM_RGB:
-            self.topics.append("/uvc_camera/cam_%d/image_raw" % self.idx)
+            self.topics.append("/pair%d/left/image_rect_color" % self.idx)
         if RECORD_CAM_INFO:
             self.topics.append("/uvc_camera/cam_%d/camera_info" % self.idx)
         # if camera is on the left side (i.e. even numbered then it provides the disparity image as well
@@ -54,8 +54,9 @@ class CameraIndexBag:
         Default destructor
         :return:
         """
-        self.rgb_log_file.close()
-        if self.idx % 2 == 0:
+        if RECORD_CAM_RGB:
+            self.rgb_log_file.close()
+        if self.idx % 2 == 0 and RECORD_CAM_DEPTH:
             self.depth_log_file.close()
 
     def create_log_directories(self, rosbag_path):
@@ -67,18 +68,19 @@ class CameraIndexBag:
         # get the absolute output path
         rosbag_name = os.path.basename(rosbag_path)
 
-        # path to save the rgb images
-        self.camera_path_rgb = os.path.join(self.output_path, 'rgb')
-        if not os.path.exists(self.camera_path_rgb):
-            os.makedirs(self.camera_path_rgb)
+        if RECORD_CAM_RGB:
+            # path to save the rgb images
+            self.camera_path_rgb = os.path.join(self.output_path, 'rgb')
+            if not os.path.exists(self.camera_path_rgb):
+                os.makedirs(self.camera_path_rgb)
 
-        self.rgb_log_file = open(os.path.join(self.output_path, "rgb.txt"), "w")
-        self.rgb_log_file.write("# color images \n" + \
-                                "# file: '%s' \n" % rosbag_name + \
-                                "# timestamp filename \n")
+            self.rgb_log_file = open(os.path.join(self.output_path, "rgb.txt"), "w")
+            self.rgb_log_file.write("# color images \n" + \
+                                    "# file: '%s' \n" % rosbag_name + \
+                                    "# timestamp filename \n")
 
         # path to save the disparity images (if applicable)
-        if self.idx % 2 == 0:
+        if self.idx % 2 == 0 and RECORD_CAM_DEPTH:
             self.camera_path_depth = os.path.join(self.output_path, 'depth')
             if not os.path.exists(self.camera_path_depth):
                 os.makedirs(self.camera_path_depth)
@@ -96,11 +98,11 @@ class CameraIndexBag:
         :param curr_frame_time: current time in the bag file
         :return:
         """
-        if self.idx % 2 == 0 and 'mono' in msg.encoding:
+        if self.idx % 2 == 0 and 'mono' in msg.encoding and RECORD_CAM_DEPTH:
             image_path = os.path.join(self.camera_path_depth, "%f.png" % curr_frame_time)
             opencv_image = CvBridge().imgmsg_to_cv2(msg, "mono8")
             cv2.imwrite(image_path, opencv_image)
-        else:
+        elif RECORD_CAM_RGB:
             image_path = os.path.join(self.camera_path_rgb, "%f.png" % curr_frame_time)
             # even numbered cameras record RGB images
             if self.idx % 2 == 0:
