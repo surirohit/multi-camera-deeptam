@@ -2,26 +2,26 @@
 # For RGBD Freiburg Dataset Sequence 1
 
 # name of the sequence
-cam_name: 'freiburg1'
+cam_name: 'zed_mini'
 
 # data directory
 # provide the absolute path (i.e. /home/<name>/...) or a relative path with respect to location of this YAML file
-cam_dir: '../../data/rgbd_dataset_freiburg1_desk'
+cam_dir: '../../data/zed_mini/cam_0'
 
 # rgb camera parameters
 rgb_parameters:
-  - f_x: 517.3
-  - f_y: 516.5
-  - c_x: 318.6
-  - c_y: 255.3
-  - width: 640
-  - height: 480
+  - f_x: 335.82357
+  - f_y: 335.82357
+  - c_x: 333.98251
+  - c_y: 191.32241
+  - width: 672
+  - height: 376
 
 # depth camera parameters
 depth_parameters:
-  - min: 0.2              # minimum depth (in meter)
-  - max: 5.0              # maximum depth (in meter)
-  - scaling: 5000         # rescaling of depth images
+  - min: 0.05               # minimum depth (in meter)
+  - max: 10.0               # maximum depth (in meter)
+  - scaling: 1000         # rescaling of depth images
 
 # performing time syncing operation
 time_syncing_parameters:
