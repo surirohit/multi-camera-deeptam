@@ -20,8 +20,9 @@ CAM_NUM_IDXS = [0]
 RECORD_CAM_RGB = False
 RECORD_CAM_INFO = False
 RECORD_CAM_DEPTH = True
-CLIPPING_MAX_DEPTH = 10.0 # in meters (set to zero for no clipping)
-CLIPPING_MIN_DEPTH = 0.05  # in meters (set to zero for no clipping)
+CLIPPING_MAX_DEPTH = 10.0   # in meters (set to zero for no clipping)
+CLIPPING_MIN_DEPTH = 0.05   # in meters (set to zero for no clipping)
+DEPTH_SCALE_FACTOR = 5000   # scaling factor for depth values
 
 ##############################################
 ### DO NOT TOUCH ANYTHING BEYOND THIS PART ###
@@ -108,10 +109,11 @@ class CameraIndexBag:
                 depth_array[depth_array > CLIPPING_MAX_DEPTH] = 0
             if CLIPPING_MIN_DEPTH > 0:
                 depth_array[depth_array < CLIPPING_MIN_DEPTH] = 0
-            depth_array_mm = depth_array * 1000
+
+            depth_array_mm = depth_array * DEPTH_SCALE_FACTOR
             depth_array_mm = depth_array_mm.astype(dtype=np.uint16)
 
-            print('Max Depth Detected: ', depth_array_mm.max() / 1000.0)
+            print('Max Depth Detected: ', depth_array_mm.max() / float(DEPTH_SCALE_FACTOR))
             cv2.imwrite(image_path, depth_array_mm)
 
         elif RECORD_CAM_RGB:

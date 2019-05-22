@@ -21,7 +21,7 @@ rgb_parameters:
 depth_parameters:
   - min: 0.05               # minimum depth (in meter)
   - max: 10.0               # maximum depth (in meter)
-  - scaling: 1000         # rescaling of depth images
+  - scaling: 5000         # rescaling of depth images
 
 # performing time syncing operation
 time_syncing_parameters:
