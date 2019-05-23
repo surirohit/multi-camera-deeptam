@@ -25,7 +25,8 @@ random.seed(12345678)
 REPLAY_MODES = ['actions', 'positions']
 VIDEO_WRITER = None
 TMP_SURFS = {}
-MAX_DEPTH_SENSOR = 10.0
+MAX_DEPTH_SENSOR = 5.0
+DEPTH_SCALING_FACTOR = 5000
 
 
 def blit_img_to_surf(img, surf, position=(0, 0), surf_key='*'):
@@ -130,25 +131,29 @@ def display_response(response, display_surf, camera_outputs,
         img = sensor_data[obs]['data']
         img_viz = sensor_data[obs].get('data_viz')
         # pdb.set_trace()
+        img_small=img
         if obs == 'depth': # TODO: this is the place where we need to calculate TOF
             # depth central crop
             if save_toc:
                 # Clip
-                img = np.clip(img, 0 , MAX_DEPTH_SENSOR)
+                img = np.clip(img, 0.1 , MAX_DEPTH_SENSOR)
                 height, width = img.shape[0], img.shape[1]
                 crop_d_img = img[height//2 - patch_len//2: height//2 + patch_len//2,
                                   width//2 - patch_len//2: width//2 + patch_len//2]
                 toc = np.mean(crop_d_img) # Assume the object is moving at 1m/s
                 toc = round(toc, 2)
                 #print("Time of contact is: {:.2f}".format(toc))
-            img *= (255.0 / MAX_DEPTH_SENSOR ) # rescaling for visualization
-            img = img.astype(np.uint8)
+
+            img_small=img*(255.0 / MAX_DEPTH_SENSOR)
+            img_small=img_small.astype(np.uint8)
+            img *= DEPTH_SCALING_FACTOR#(255.0 / MAX_DEPTH_SENSOR) # rescaling for visualization
+            img = img.astype(np.uint16)
             depth_img = img
         elif obs == 'depthright': # TODO: this is the place where we need to calculate TOF
             # depth central crop
             if save_toc:
                 # Clip
-                img = np.clip(img, 0 , MAX_DEPTH_SENSOR)
+                img = np.clip(img, 0.1 , MAX_DEPTH_SENSOR)
                 #changed
                 height, width = img.shape[0], img.shape[1]
                 crop_d_img = img[height//2 - patch_len//2: height//2 + patch_len//2,
@@ -156,13 +161,16 @@ def display_response(response, display_surf, camera_outputs,
                 toc = np.mean(crop_d_img) # Assume the object is moving at 1m/s
                 toc = round(toc, 2)
                 #print("Time of contact is: {:.2f}".format(toc))
-            img *= (255.0 / MAX_DEPTH_SENSOR ) # rescaling for visualization
-            img = img.astype(np.uint8)
+            img_small=img*(255.0 / MAX_DEPTH_SENSOR)
+            img_small=img_small.astype(np.uint8)
+            img *= DEPTH_SCALING_FACTOR#(255.0 / MAX_DEPTH_SENSOR) # rescaling for visualization
+            img = img.astype(np.uint16)
             rightdepth_img = img
+
 
         elif img_viz is not None:
             img = img_viz
-        blit_img_to_surf(img, display_surf, config.get('position'))
+        blit_img_to_surf(img_small, display_surf, config.get('position'))
 
         # TODO: consider support for writing to video of all camera modalities together
         if obs == 'color':
@@ -237,7 +245,7 @@ def interactive_loop(sim, args):
         last_good_action = 'idle'
         experiment_dir = os.path.join(args.save_rootdir,
                                    "{}".format(now.strftime("%Y-%m-%d_%H-%M")))
-        toc_file = os.path.join(experiment_dir, "tocs.txt")
+        toc_file = os.path.join(experiment_dir, "groundtruth.txt")
         image_folder = os.path.join(experiment_dir, "images")
         # create the folders if not already existent
         if not os.path.exists(experiment_dir):
@@ -386,7 +394,7 @@ def interactive_loop(sim, args):
                 sim.episode_info = sim.reset()
         else:
             # Figure out action
-            action = {'name': 'idle', 'strength': 10, 'angle': math.radians(5)}
+            action = {'name': 'idle', 'strength': 100, 'angle': math.radians(5)}
             actions = []
             action_names = []
             if replay:
@@ -499,6 +507,9 @@ def interactive_loop(sim, args):
                         cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR))
             cv2.imwrite(right_frame_fname,
                         cv2.cvtColor(right_image, cv2.COLOR_RGB2BGR))
+            # Check
+            # cv2.imwrite(frame_fname,color_img)
+            # cv2.imwrite(right_frame_fname,color_img)
             tocs.append(toc)
             timestamp.append(increment)
             increment=increment+1
@@ -506,6 +517,12 @@ def interactive_loop(sim, args):
             agent_states.append(convert_to_vector(response['info']['agent_state']))
             prev_toc = toc
             # Save depth image
+            #modify depth
+            # depth_img *=DEPTH_SCALER
+            # rightdepth_img *=DEPTH_SCALER
+            # depth_img = depth_img.astype(np.uint16)
+            # rightdepth_img = rightdepth_img.astype(np.uint16)
+
             cv2.imwrite(depth_fname, depth_img)
             cv2.imwrite(rightdepth_fname, rightdepth_img)
             #print("saving!")
@@ -522,7 +539,13 @@ def interactive_loop(sim, args):
     if args.save_toc:
         # concatenated_array = np.array([tocs, performed_actions]).T
         concatenated_array = np.array([timestamp]).T
-        concatenated_array = np.concatenate((concatenated_array, np.array(agent_states)), axis=1)
+        np_agent_states = np.array(agent_states)
+        # pdb.set_trace()
+        # for i in range (1,np_agent_states.shape[0]):
+        np_agent_states[:,0:3]=np_agent_states[:,0:3]-np_agent_states[0,0:3]
+
+        #Quaternion substraction will be added TODO
+        concatenated_array = np.concatenate((concatenated_array, np_agent_states), axis=1)
         np.savetxt(toc_file, concatenated_array, fmt='%.3f',
                    header=" Timestamps tx, ty, tz, qx, qy, qz, qw")
         print("Saved {} images".format(len(tocs)))
@@ -599,7 +622,7 @@ def main():
                        default=True,
                        help='associates images with time of contact')
     parser.add_argument('--save_rootdir',
-                       default="/media/fadhil/ThirdPartition/3_3DVision/2_Dataset/minosdata",
+                       default="/media/fadhil/ThirdPartition/3_3DVision/2_Dataset/minosdata/",
                        help='save rootdir for the generated dataset')
 
     args = parse_sim_args(parser)
