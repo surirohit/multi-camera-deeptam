@@ -13,7 +13,7 @@
       {
         "ImageType": 0,
         "Width": 640,
-        "Height": 360,
+        "Height": 480,
         "FOV_Degrees": 60,
         "AutoExposureSpeed": 100,
         "AutoExposureBias": 0,
@@ -24,7 +24,7 @@
       {
         "ImageType": 1,
         "Width": 640,
-        "Height": 360,
+        "Height": 480,
         "FOV_Degrees": 60,
         "AutoExposureSpeed": 100,
         "AutoExposureBias": 0,
@@ -34,7 +34,7 @@
       {
         "ImageType": 2,
         "Width": 640,
-        "Height": 360,
+        "Height": 480,
         "FOV_Degrees": 60,
         "AutoExposureSpeed": 100,
         "AutoExposureBias": 0,
@@ -44,7 +44,7 @@
       {
         "ImageType": 3,
         "Width": 640,
-        "Height": 360,
+        "Height": 480,
         "FOV_Degrees": 60,
         "AutoExposureSpeed": 100,
         "AutoExposureBias": 0,
@@ -54,7 +54,7 @@
       {
         "ImageType": 4,
         "Width": 640,
-        "Height": 360,
+        "Height": 480,
         "FOV_Degrees": 60,
         "AutoExposureSpeed": 100,
         "AutoExposureBias": 0,
