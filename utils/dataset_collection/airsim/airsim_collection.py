@@ -13,6 +13,9 @@ import datetime
 
 pp = pprint.PrettyPrinter(indent=4)
 
+CLIPPING_MAX_DEPTH = 30.0   # in meters (set to zero for no clipping)
+CLIPPING_MIN_DEPTH = 0.005   # in meters (set to zero for no clipping)
+DEPTH_SCALE_FACTOR = 2000   # scaling factor for depth values
 
 # help for usage
 def printUsage():
@@ -93,9 +96,13 @@ def logImage(simtime, log_filename, img_filename):
 
 
 # convert float64 image to 16UC1 image (following OpenNI representation)
-def save_depth_float_as_uchar16(filename, depth_raw):
-    # depth_raw = MultirotorClient.getPfmArray(response)
-    depth_vis = np.array(depth_raw) * 1000;
+def save_depth_float_as_uchar16(filename, depth_array):
+    if CLIPPING_MAX_DEPTH > 0:
+        depth_array[depth_array > CLIPPING_MAX_DEPTH] = 0
+    if CLIPPING_MIN_DEPTH > 0:
+        depth_array[depth_array < CLIPPING_MIN_DEPTH] = 0
+
+    depth_vis = np.array(depth_array) * DEPTH_SCALE_FACTOR
     depth_vis = depth_vis.astype(np.uint16)
     cv2.imwrite(filename, depth_vis)
 
@@ -160,9 +167,7 @@ def captureImages(dataPath, ctr, filename):
         for i, response in enumerate(responses):
             if response.pixels_as_float:
                 depth_raw = airsim.get_pfm_array(response)
-                depth_raw = np.array(depth_raw) * 1000;
-                depth_vis = depth_raw.astype(np.uint16)
-                cv2.imwrite(os.path.normpath(dataPath[i] + '/' + filename + '.png'), depth_vis)
+                save_depth_float_as_uchar16(os.path.normpath(dataPath[i] + '/' + filename + '.png'), depth_raw)
             else:
                 airsim.write_file(os.path.normpath(dataPath[i] + '/' + filename + '.png'), response.image_data_uint8)
 

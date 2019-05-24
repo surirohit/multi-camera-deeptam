@@ -91,7 +91,7 @@ while x < X:
     client.moveToPositionAsync(x, y, H, V, delay_y, airsim.DrivetrainType.MaxDegreeOfFreedom,
                                airsim.YawMode(False, YAW), -1, 0).join()
 
-    x = x + X_step;
+    x = x + X_step
 
     printg("starting to move to (%3d, %3d)" % (x, y))
     client.moveToPositionAsync(x, y, H, V, delay_x, airsim.DrivetrainType.MaxDegreeOfFreedom,
@@ -101,11 +101,11 @@ while x < X:
     client.moveToPositionAsync(x, 0, H, V, delay_y, airsim.DrivetrainType.MaxDegreeOfFreedom,
                                airsim.YawMode(False, YAW), -1, 0).join()
 
-    x = x + X_step;
+    x = x + X_step
 
     printg("starting to move to (%3d, %3d)" % (x, y))
     client.moveToPositionAsync(x, 0, H, V, delay_x, airsim.DrivetrainType.MaxDegreeOfFreedom,
                                airsim.YawMode(False, YAW), -1, 0).join()
 
 # to record the time of flight of the drone
-client.landAsync(10);
+client.landAsync(10)
