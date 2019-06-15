@@ -1,18 +1,14 @@
 import os
 import argparse
-import numpy as np
 import matplotlib.pyplot as plt
-from PIL import ImageChops
-from mpl_toolkits.mplot3d import Axes3D
 
 import deeptam_tracker.models.networks
 from deeptam_tracker.evaluation.metrics import rgbd_rpe
-from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_array_to_colorimg
 from deeptam_tracker.utils import message as mg
 
-from multicam_tracker.utils.parser import load_multi_cam_config_yaml
+from multicam_tracker.utils.parser import load_multi_cam_config_yaml, write_tum_trajectory_file
 from multicam_tracker.multicam_tracker import MultiCamTracker
-from multicam_tracker.utils.parser import write_tum_trajectory_file
+from multicam_tracker.utils.visualizer import Visualizer
 
 PRINT_PREFIX = '[MAIN]: '
 
@@ -38,97 +34,6 @@ def parse_args():
     # Retrieve arguments
     args = parser.parse_args()
     return args
-
-
-def init_visualization(title='DeepTAM Tracker'):
-    """Initializes a simple visualization for tracking
-    
-    title: str
-    """
-    fig = plt.figure()
-    fig.set_size_inches(10.5, 8.5)
-    fig.suptitle(title, fontsize=16)
-
-    ax1 = fig.add_subplot(2, 2, 1, projection='3d', aspect='equal')
-    ax1.plot([], [], [],
-             'r',
-             label='Prediction')
-
-    ax1.plot([], [], [],
-             'g',
-             label='Ground truth')
-    ax1.legend()
-    ax1.set_zlim(0.5, 1.8)
-    ax1.set_title('Trajectory')
-
-    ax2 = fig.add_subplot(2, 2, 2)
-    ax2.get_xaxis().set_visible(False)
-    ax2.get_yaxis().set_visible(False)
-
-    ax2.set_title('Current image')
-    ax3 = fig.add_subplot(2, 2, 4)
-    ax3.get_xaxis().set_visible(False)
-    ax3.get_yaxis().set_visible(False)
-
-    ax3.set_title('Virtual current image')
-    ax4 = fig.add_subplot(2, 2, 3)
-
-    ax4.get_xaxis().set_visible(False)
-    ax4.get_yaxis().set_visible(False)
-    ax4.set_title('Diff image')
-
-    return [ax1, ax2, ax3, ax4]
-
-
-def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual):
-    """ Updates the visualization for tracking
-    
-    axes: a list of plt.axes
-    
-    pr_poses, gt_poses: a list of Pose
-    
-    image_cur, image_cur_virtual: np.array
-    
-    """
-    pr_poses_c2w = [convert_between_c2w_w2c(x) for x in pr_poses]
-    gt_poses_c2w = [convert_between_c2w_w2c(x) for x in gt_poses]
-
-    axes[0].plot(np.array([x.t[0] for x in pr_poses_c2w]),
-                 np.array([x.t[1] for x in pr_poses_c2w]),
-                 np.array([x.t[2] for x in pr_poses_c2w]),
-                 'r',
-                 label='Prediction')
-
-    axes[0].plot(np.array([x.t[0] for x in gt_poses_c2w]),
-                 np.array([x.t[1] for x in gt_poses_c2w]),
-                 np.array([x.t[2] for x in gt_poses_c2w]),
-                 'g',
-                 label='Ground truth')
-
-    if image_cur_virtual is not None:
-        image_cur = convert_array_to_colorimg(image_cur.squeeze())
-        image_cur_virtual = convert_array_to_colorimg(image_cur_virtual.squeeze())
-        diff = ImageChops.difference(image_cur, image_cur_virtual)
-        axes[1].cla()
-        axes[1].set_title('Current image')
-        axes[2].cla()
-        axes[2].set_title('Virtual current image')
-        axes[3].cla()
-        axes[3].set_title('Diff image')
-        axes[1].imshow(np.array(image_cur))
-        axes[2].imshow(np.array(image_cur_virtual))
-        axes[3].imshow(np.array(diff))
-
-    plt.pause(1e-9)
-
-
-def update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list):
-    for idx in range(len(axes_list)):
-        update_visualization(axes_list[idx],
-                             pr_poses_list[idx],
-                             gt_poses_list[idx],
-                             frame_list[idx]['image'],
-                             result_list[idx]['warped_image'])
 
 
 def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
@@ -157,14 +62,19 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
                                        seq_name=config['seq_name'])
     multicam_tracker.startup()
 
-    axes_list = [init_visualization(title="DeepTAM Tracker Cam %d" % idx) \
-                 for idx in range(len(config['camera_configs']))]
+    viz = Visualizer("MultiCam Tracker", len(config['camera_configs']))
+    if visualization:
+        viz.startup()
 
     # Putting in higher scope so that don't need to call function again after loop
     pr_poses_list = None
-    gt_poses_list = None
     frame_list = None
-    result_list = None
+
+    # Reference camera configuration
+    try:
+        camera_ref_idx = config['camera_ref_index']
+    except KeyError:
+        camera_ref_idx = 0
 
     for frame_idx in range(multicam_tracker.get_sequence_length()):
 
@@ -172,9 +82,8 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
         pr_poses_list, gt_poses_list, frame_list, result_list = \
             multicam_tracker.update(frame_idx)
 
-        # TODO: visualization
         if visualization:
-            update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list)
+            viz.update(pr_poses_list, gt_poses_list[camera_ref_idx], frame_list)
 
     gt_poses_list = multicam_tracker.get_gt_poses_list()
     timestamps_list = multicam_tracker.get_timestamps_list()
@@ -193,8 +102,8 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
         write_tum_trajectory_file(os.path.join(output_dir, name, 'stamped_groundtruth.txt'), timestamps_list[idx],
                                   gt_poses_list[idx])
 
-    # TODO: visualization
-    update_visualization_all(axes_list, pr_poses_list, gt_poses_list, frame_list, result_list)
+    # final visualization
+    viz.update(pr_poses_list, gt_poses_list[camera_ref_idx], frame_list)
     plt.show()
 
     multicam_tracker.delete_tracker()
