@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import deeptam_tracker.models.networks
-from deeptam_tracker.evaluation.metrics import rgbd_rpe
+from deeptam_tracker.evaluation.metrics import rgbd_rpe, rgbd_ate
 from deeptam_tracker.utils import message as mg
 
 from multicam_tracker.utils.parser import load_multi_cam_config_yaml, write_tum_trajectory_file
@@ -133,23 +133,33 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
 
     for idx in range(multicam_tracker.num_of_cams):
         ## evaluation
-        errors_rpe = rgbd_rpe(gt_poses_list[idx], pr_poses_list[idx], timestamps_list[idx])
+        errors_ate = rgbd_ate(gt_poses_list[camera_ref_idx], pr_poses_list[idx], timestamps_list[idx])
         print(PRINT_PREFIX, "Camera %d:" % idx)
-        mg.print_notify('Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
-            errors_rpe['translational_error.rmse']))
-
+        mg.print_notify('Frame-to-keyframe odometry evaluation [ATE], translational RMSE: {}[m/s]'.format(
+            errors_ate['absolute_translational_error.rmse']))
         ## save trajectory files
         name = multicam_tracker.cameras_list[idx].name
         write_tum_trajectory_file(os.path.join(output_dir, name, 'stamped_traj_estimate.txt'), timestamps_list[idx],
                                   pr_poses_list[idx])
         write_tum_trajectory_file(os.path.join(output_dir, name, 'stamped_groundtruth.txt'), timestamps_list[idx],
-                                  gt_poses_list[idx])
+                                  gt_poses_list[camera_ref_idx])
 
-    # final visualization
     # perform pose fusion
     fused_poses = naive_pose_fusion(pr_poses_list)
+    ## evaluation
+    errors_ate = rgbd_ate(gt_poses_list[camera_ref_idx], fused_poses, timestamps_list[camera_ref_idx])
+    print(PRINT_PREFIX, "Fused Poses from %d cameras" % multicam_tracker.num_of_cams)
+    mg.print_notify('Frame-to-keyframe odometry evaluation [ATE], translational RMSE: {}[m/s]'.format(
+        errors_ate['absolute_translational_error.rmse']))
+    ## save trajectory files
+    name = "naive_fusion"
+    write_tum_trajectory_file(os.path.join(output_dir, name, 'stamped_traj_estimate.txt'), timestamps_list[idx],
+                              pr_poses_list[idx])
+    write_tum_trajectory_file(os.path.join(output_dir, name, 'stamped_groundtruth.txt'), timestamps_list[idx],
+                              gt_poses_list[idx])
+
+    # final visualization
     viz.update(frame_list, pr_poses_list=pr_poses_list, fused_poses=fused_poses, gt_poses=gt_poses_list[camera_ref_idx])
-    viz.update(frame_list, pr_poses_list=pr_poses_list, gt_poses=gt_poses_list[camera_ref_idx])
     plt.show()
 
     multicam_tracker.delete_tracker()
