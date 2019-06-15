@@ -83,7 +83,7 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
             multicam_tracker.update(frame_idx)
 
         if visualization:
-            viz.update(pr_poses_list, gt_poses_list[camera_ref_idx], frame_list)
+            viz.update(frame_list, pr_poses_list=pr_poses_list, gt_poses=gt_poses_list[camera_ref_idx])
 
     gt_poses_list = multicam_tracker.get_gt_poses_list()
     timestamps_list = multicam_tracker.get_timestamps_list()
@@ -103,7 +103,7 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
                                   gt_poses_list[idx])
 
     # final visualization
-    viz.update(pr_poses_list, gt_poses_list[camera_ref_idx], frame_list)
+    viz.update(frame_list, pr_poses_list=pr_poses_list, gt_poses=gt_poses_list[camera_ref_idx])
     plt.show()
 
     multicam_tracker.delete_tracker()
