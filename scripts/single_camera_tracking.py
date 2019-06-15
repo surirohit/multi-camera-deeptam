@@ -159,7 +159,7 @@ def naive_pose_fusion(cams_poses):
 
     return fused_poses
 
-def transform_pose_to_base(config, poses):
+def transform_poses_to_base(config, poses):
     """
     Transform the poses to the base frame with settings specified in the config
     :param config:
@@ -176,8 +176,8 @@ def transform_pose_to_base(config, poses):
     ## transformation of poses
     tf_poses = []
     for pose in poses:
-        t = tf_R_BC * pose.t + tf_t_BC
-        R = tf_R_BC * pose.R
+        t = pose.t - tf_t_BC
+        R = pose.R * tf_R_BC.inverse()
         tf_pose = Pose(R=R, t=t)
         tf_poses.append(tf_pose)
 
@@ -237,8 +237,10 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization,
         pr_poses = tracker.poses
 
         # transform pose to base frame
-        pr_poses = transform_pose_to_base(config, pr_poses)
-
+        print("Before: ", pr_poses[-1].t)
+        pr_poses = transform_poses_to_base(config, pr_poses)
+        print("After: ", pr_poses[-1].t)
+        print('----------------')
         if visualization:
             update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'], enable_gt)
 
@@ -249,7 +251,7 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization,
 
     # transform pose to base frame
     pr_poses = tracker.poses
-    pr_poses = transform_pose_to_base(config, pr_poses)
+    pr_poses = transform_poses_to_base(config, pr_poses)
 
     ## evaluation
     errors_rpe = rgbd_rpe(gt_poses, pr_poses, timestamps)

@@ -106,8 +106,8 @@ class SingleCamTracker:
         ## transformation of poses
         tf_poses = []
         for pose in self.tracker.poses:
-            t = self.tf_R_BC * pose.t + self.tf_t_BC
-            R = self.tf_R_BC * pose.R
+            t = pose.t - self.tf_t_BC
+            R = pose.R * self.tf_R_BC.inverse()
             tf_pose = Pose(R=R, t=t)
             tf_poses.append(tf_pose)
 
