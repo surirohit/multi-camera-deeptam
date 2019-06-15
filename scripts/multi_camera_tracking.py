@@ -63,8 +63,10 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     multicam_tracker.startup()
 
     viz = Visualizer("MultiCam Tracker", len(config['camera_configs']))
-    if visualization:
-        viz.startup()
+    viz.set_enable_pred(True)
+    viz.set_enable_gt(True)
+    viz.set_enable_fused(False)
+    viz.startup()
 
     # Putting in higher scope so that don't need to call function again after loop
     pr_poses_list = None
