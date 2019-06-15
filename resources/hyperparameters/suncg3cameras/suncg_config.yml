@@ -1,0 +1,15 @@
+# For Airsim Dataset
+
+# name of the sequence
+seq_name: 'suncg3cameras'
+
+# base camera index
+# index of the camera in the camera_configs which is to be referred to the base camera of the system
+camera_ref_index: 2
+
+# directories containing camera configs
+# provide the absolute paths (i.e. /home/<name>/...) or relative paths with respect to this YAML file
+camera_configs:
+  - 'cam_left.yaml'
+  - 'cam_right.yaml'
+  - 'cam_center.yaml'
