@@ -1,6 +1,7 @@
 import os
 import argparse
 import matplotlib.pyplot as plt
+import numpy as np
 
 import deeptam_tracker.models.networks
 from deeptam_tracker.evaluation.metrics import rgbd_rpe
@@ -36,6 +37,42 @@ def parse_args():
     return args
 
 
+def naive_pose_fusion(cams_poses):
+    '''
+    Averages the input poses of each camera provided in the list
+
+    :param cams_poses: list of list of poses for each camera
+    :return: list of poses after fusion
+    '''
+    from deeptam_tracker.utils.rotation_conversion import rotation_matrix_to_angleaxis, angleaxis_to_rotation_matrix
+    from deeptam_tracker.utils.datatypes import Vector3, Matrix3, Pose
+    from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c
+
+    assert isinstance(cams_poses, list)
+    assert all(len(cam_poses) == len(cams_poses[0]) for cam_poses in cams_poses)
+
+    fused_poses = []
+    num_of_poses = len(cams_poses[0])
+
+    for idx in range(num_of_poses):
+        trans = []
+        orientation_aa = []
+        for cam_num in range(len(cams_poses)):
+            # transform pose to the world frame
+            pose_c2w = convert_between_c2w_w2c(cams_poses[cam_num][idx])
+            # append to the list
+            trans.append(np.array(pose_c2w.t))
+            orientation_aa.append(rotation_matrix_to_angleaxis(pose_c2w.R))
+
+        # naive approach by taking average
+        t = np.mean(trans, axis=0)
+        R = angleaxis_to_rotation_matrix(Vector3(np.mean(orientation_aa, axis=0)))
+        fused_pose_c2w = Pose(R=Matrix3(R), t=Vector3(t))
+        fused_poses.append(convert_between_c2w_w2c(fused_pose_c2w))
+
+    return fused_poses
+
+
 def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
     """Tracks a multicam rgbd sequence using deeptam tracker
     
@@ -63,9 +100,10 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     multicam_tracker.startup()
 
     viz = Visualizer("MultiCam Tracker", len(config['camera_configs']))
+    # configure the visualizer
     viz.set_enable_pred(True)
     viz.set_enable_gt(True)
-    viz.set_enable_fused(False)
+    viz.set_enable_fused(True)
     viz.startup()
 
     # Putting in higher scope so that don't need to call function again after loop
@@ -81,11 +119,14 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     for frame_idx in range(multicam_tracker.get_sequence_length()):
 
         print(PRINT_PREFIX, 'Input frame number: {}'.format(frame_idx))
-        pr_poses_list, gt_poses_list, frame_list, result_list = \
-            multicam_tracker.update(frame_idx)
+        pr_poses_list, gt_poses_list, frame_list, result_list = multicam_tracker.update(frame_idx)
+
+        # perform pose fusion
+        fused_poses = naive_pose_fusion(pr_poses_list)
 
         if visualization:
-            viz.update(frame_list, pr_poses_list=pr_poses_list, gt_poses=gt_poses_list[camera_ref_idx])
+            viz.update(frame_list, pr_poses_list=pr_poses_list, fused_poses=fused_poses,
+                       gt_poses=gt_poses_list[camera_ref_idx])
 
     gt_poses_list = multicam_tracker.get_gt_poses_list()
     timestamps_list = multicam_tracker.get_timestamps_list()
@@ -105,6 +146,9 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
                                   gt_poses_list[idx])
 
     # final visualization
+    # perform pose fusion
+    fused_poses = naive_pose_fusion(pr_poses_list)
+    viz.update(frame_list, pr_poses_list=pr_poses_list, fused_poses=fused_poses, gt_poses=gt_poses_list[camera_ref_idx])
     viz.update(frame_list, pr_poses_list=pr_poses_list, gt_poses=gt_poses_list[camera_ref_idx])
     plt.show()
 

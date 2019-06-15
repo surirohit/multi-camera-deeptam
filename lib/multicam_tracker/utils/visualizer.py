@@ -70,7 +70,7 @@ class Visualizer:
             ax1.plot([], [], [],
                      GT_COLOR,
                      label='Ground truth')
-            ax1.legend()
+            ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             ax1.set_title('Trajectory')
             self.axs.append(ax1)
 
@@ -85,6 +85,8 @@ class Visualizer:
     def update(self, frame_list, pr_poses_list, fused_poses=None, gt_poses=None):
         # update groundtruth
         if self.enabled_gt:
+            if gt_poses == None:
+                mg.print_fail(PRINT_PREFIX, "Groundtruth poses are not available!")
             # convert poses from cam2world to world2cam frame
             gt_poses_c2w = [convert_between_c2w_w2c(x) for x in gt_poses]
             self.axs[0].plot(np.array([x.t[0] for x in gt_poses_c2w]),
@@ -94,8 +96,6 @@ class Visualizer:
                              label='Ground truth')
         # update trajectory plot
         if self.enabled_pred:
-            if gt_poses == None:
-                mg.print_fail(PRINT_PREFIX, "Groundtruth poses are not available!")
             for idx in range(self.number_of_cameras):
                 pr_poses = pr_poses_list[idx]
                 pr_poses_c2w = [convert_between_c2w_w2c(x) for x in pr_poses]
