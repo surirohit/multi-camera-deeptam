@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import ImageChops
 from mpl_toolkits.mplot3d import Axes3D
+from minieigen import Vector3, Matrix3, Quaternion
+from deeptam_tracker.utils.datatypes import Pose
 
 from deeptam_tracker.tracker import Tracker
 import deeptam_tracker.models.networks
@@ -36,7 +38,7 @@ def parse_args():
                         default=None)
     parser.add_argument('--disable_vis', '-v', help='disable the frame-by-frame visualization for speed-up',
                         action='store_true')
-    parser.add_argument('--enable_gt', '-e', help='Enable the ground truth', default=False)
+    parser.add_argument('--enable_gt', '-e', help='Enable the ground truth', action='store_true')
 
     # Retrieve arguments
     args = parser.parse_args()
@@ -157,6 +159,30 @@ def naive_pose_fusion(cams_poses):
 
     return fused_poses
 
+def transform_pose_to_base(config, poses):
+    """
+    Transform the poses to the base frame with settings specified in the config
+    :param config:
+    :param poses:
+    :return:
+    """
+    ## initialize base to cam transformation
+    tf_t_BC = Vector3(config['base_to_cam_pose']['translation']['x'], config['base_to_cam_pose']['translation']['y'],
+                      config['base_to_cam_pose']['translation']['z'])
+    tf_q_BC = Quaternion(config['base_to_cam_pose']['orientation']['w'], config['base_to_cam_pose']['orientation']['x'],
+                         config['base_to_cam_pose']['orientation']['y'], config['base_to_cam_pose']['orientation']['z'])
+    tf_R_BC = tf_q_BC.toRotationMatrix()
+
+    ## transformation of poses
+    tf_poses = []
+    for pose in poses:
+        t = tf_R_BC * pose.t + tf_t_BC
+        R = tf_R_BC * pose.R
+        tf_pose = Pose(R=R, t=t)
+        tf_poses.append(tf_pose)
+
+    return tf_poses
+
 def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir, enable_gt):
     """Tracks a rgbd sequence using deeptam tracker
     
@@ -210,6 +236,9 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization,
         gt_poses.append(frame['pose'])
         pr_poses = tracker.poses
 
+        # transform pose to base frame
+        pr_poses = transform_pose_to_base(config, pr_poses)
+
         if visualization:
             update_visualization(axes, pr_poses, gt_poses, frame['image'], result['warped_image'], enable_gt)
 
@@ -218,8 +247,11 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization,
             key_gt_poses.append(frame['pose'])
             key_timestamps.append(sequence.get_timestamp(frame_idx))
 
-    ## evaluation
+    # transform pose to base frame
     pr_poses = tracker.poses
+    pr_poses = transform_pose_to_base(config, pr_poses)
+
+    ## evaluation
     errors_rpe = rgbd_rpe(gt_poses, pr_poses, timestamps)
     mg.print_notify(PRINT_PREFIX, 'Frame-to-keyframe odometry evaluation [RPE], translational RMSE: {}[m/s]'.format(
         errors_rpe['translational_error.rmse']))

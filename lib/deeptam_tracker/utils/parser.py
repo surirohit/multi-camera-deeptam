@@ -5,6 +5,13 @@ from deeptam_tracker.utils import message as mg
 
 PRINT_PREFIX = '[UTILS][PARSER]: '
 
+def pretty_print_nested_dict(d, indent=0):
+    for key, value in d.items():
+        print('\t' * indent + str(key))
+        if isinstance(value, dict):
+            pretty_print_nested_dict(value, indent + 1)
+        else:
+            print('\t' * (indent + 1) + str(value))
 
 def load_camera_config_yaml(config_file):
     """Returns the dictionary created out of parsed YAML file for a single camera
@@ -40,7 +47,15 @@ def load_camera_config_yaml(config_file):
         if isinstance(config[key], list):
             child_dict = {}
             for item in config[key]:
-                child_dict.update(item)
+                sub_child_dict = {}
+                for sub_item in item:
+                    if isinstance(item[sub_item] , list):
+                        for sub_sub_item in item[sub_item]:
+                            sub_child_dict.update(sub_sub_item)
+                        child_dict[sub_item] = sub_child_dict
+                    else:
+                        child_dict.update(item)
+                        break
             config[key] = child_dict
 
     return config

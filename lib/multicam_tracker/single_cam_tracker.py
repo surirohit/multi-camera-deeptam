@@ -1,5 +1,7 @@
 from deeptam_tracker.evaluation.rgbd_sequence import RGBDSequence
 from deeptam_tracker.tracker import Tracker
+from minieigen import Vector3, Quaternion
+from deeptam_tracker.utils.datatypes import *
 
 PRINT_PREFIX = '[SINGLECAM TRACKER]: '
 
@@ -22,6 +24,16 @@ class SingleCamTracker:
 
         self._startup = False
         self.name = config['cam_name']
+
+        # base to camera transformation
+        self.tf_t_BC = Vector3(config['base_to_cam_pose']['translation']['x'],
+                          config['base_to_cam_pose']['translation']['y'],
+                          config['base_to_cam_pose']['translation']['z'])
+        self.tf_q_BC = Quaternion(config['base_to_cam_pose']['orientation']['w'],
+                             config['base_to_cam_pose']['orientation']['x'],
+                             config['base_to_cam_pose']['orientation']['y'],
+                             config['base_to_cam_pose']['orientation']['z'])
+        self.tf_R_BC = self.tf_q_BC.toRotationMatrix()
 
         self.sequence = RGBDSequence(config['cam_dir'], rgb_parameters=config['rgb_parameters'],
                                      depth_parameters=config['depth_parameters'],
@@ -86,4 +98,18 @@ class SingleCamTracker:
     def get_sequence_length(self):
         return self.sequence.get_sequence_length()
 
+    def get_transformed_pose(self):
+        """
+        Transforms the poses estimated from the tracker to a base frame
+        :return:
+        """
+        ## transformation of poses
+        tf_poses = []
+        for pose in self.tracker.poses:
+            t = self.tf_R_BC * pose.t + self.tf_t_BC
+            R = self.tf_R_BC * pose.R
+            tf_pose = Pose(R=R, t=t)
+            tf_poses.append(tf_pose)
+
+        return tf_poses
 # EOF
