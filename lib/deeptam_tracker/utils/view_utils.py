@@ -71,7 +71,7 @@ def safe_crop_array2d(arr, box, fill_value):
         return tmp
 
 
-def adjust_intrinsics(view, K_new, width_new, height_new):
+def adjust_intrinsics(view, K_new, width_new, height_new, verbose=False):
     """Creates a new View with the specified intrinsics and image dimensions.
     The skew parameter K[0,1] will be ignored.
     
@@ -86,6 +86,9 @@ def adjust_intrinsics(view, K_new, width_new, height_new):
         
     height_new: int
         The new image height
+
+    verbose: bool
+        Amount of verbosity of print statements
         
     Returns a View tuple with adjusted image, depth and intrinsics
     """
@@ -130,7 +133,8 @@ def adjust_intrinsics(view, K_new, width_new, height_new):
     y1 = y0 + int(height_new)
 
     if x0 < 0 or y0 < 0 or x1 > width_resize or y1 > height_resize:
-        mg.print_warn(PRINT_PREFIX, '[WARNING] Adjusting intrinsics adds a border to the image')
+        if verbose:
+            mg.print_warn(PRINT_PREFIX, '[WARNING] Adjusting intrinsics adds a border to the image')
         img_new = safe_crop_image(img_resize, (x0, y0, x1, y1), (127, 127, 127))
         if not depth_resize is None:
             depth_new = safe_crop_array2d(depth_resize, (x0, y0, x1, y1), 0).astype(np.float32)
