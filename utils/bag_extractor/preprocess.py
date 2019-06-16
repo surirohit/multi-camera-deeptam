@@ -7,8 +7,8 @@ import numpy as np
 from PIL import Image
 
 CROP_SIZE = (480,360)
-DEPTH_MAX = 1672.0
-BASELINE = 31.1146
+SCALING = 1000.0
+BASELINE = 0.0311146
 
 def get_fx(folder):
     yaml_file = os.path.join(folder,'calib.yaml')
@@ -46,13 +46,12 @@ def convert_and_crop_depth_image(input_path, crop_center, f_x):
 
     disparity = np.asarray(disparity_img)
 
+    disparity = disparity / 8.0
+    
     depth = BASELINE * f_x / disparity
 
     depth[depth==np.Inf] = 0
-    
-    depth_np = depth.astype(np.uint16)
-
-    depth_np = depth_np/DEPTH_MAX * 50000
+    depth_np = depth_np * SCALING
     
     depth_np = depth_np.astype(np.uint16)
     

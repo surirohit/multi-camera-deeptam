@@ -1,26 +1,23 @@
-## sample config file for RGBSequence class
-# For RGBD Freiburg Dataset Sequence 1
-
 # name of the sequence
-cam_name: 'zed_mini'
+cam_name: 'cam_0'
 
 # data directory
 # provide the absolute path (i.e. /home/<name>/...) or a relative path with respect to location of this YAML file
-cam_dir: '../../data/zed_mini/cam_0'
+cam_dir: '../../../data/vicon-2019-06-07-15-07-54/cam_0'
 
 # rgb camera parameters
 rgb_parameters:
-  - f_x: 335.82357
-  - f_y: 335.82357
-  - c_x: 333.98251
-  - c_y: 191.32241
-  - width: 672
-  - height: 376
+  - f_x: 434
+  - f_y: 434
+  - c_x: 240
+  - c_y: 180
+  - width: 480
+  - height: 360
 
 # depth camera parameters
 depth_parameters:
-  - min: 0.05               # minimum depth (in meter)
-  - max: 10.0               # maximum depth (in meter)
+  - min: 0.2              # minimum depth (in meter)
+  - max: 5.0              # maximum depth (in meter)
   - scaling: 1000         # rescaling of depth images
 
 # performing time syncing operation
