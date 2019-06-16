@@ -9,7 +9,7 @@ import deeptam_tracker.utils.message as mg
 PRINT_PREFIX = "[FUSION]: "
 
 
-def naive_pose_fusion(cams_poses):
+def naive_avg_pose_fusion(cams_poses):
     '''
     Averages the input poses of each camera provided in the list
 
@@ -77,7 +77,7 @@ def sift_pose_fusion(cams_poses, images_list):
     return convert_between_c2w_w2c(fused_pose_c2w)
 
 
-def naive_rejection_pose_fusion(cams_poses, amt_dev=1.4):
+def rejection_avg_pose_fusion(cams_poses, amt_dev=1.4):
     '''
     Averages the input poses of each camera provided in the list based on pose(translation only) acceptability
     The acceptability is evaluated using the sigma-based rule for outlier rejection in a data.

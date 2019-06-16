@@ -9,7 +9,7 @@ from deeptam_tracker.utils import message as mg
 from multicam_tracker.utils.parser import load_multi_cam_config_yaml, write_tum_trajectory_file
 from multicam_tracker.multicam_tracker import MultiCamTracker
 from multicam_tracker.utils.visualizer import Visualizer
-from multicam_tracker.pose_fusion import naive_pose_fusion, sift_pose_fusion, naive_rejection_pose_fusion
+from multicam_tracker.pose_fusion import naive_avg_pose_fusion, sift_pose_fusion, rejection_avg_pose_fusion
 
 PRINT_PREFIX = '[MAIN]: '
 
@@ -99,14 +99,14 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
 
         # perform pose fusion
         if method == 'naive':
-            fused_pose = naive_pose_fusion(last_poses_list)
+            fused_pose = naive_avg_pose_fusion(last_poses_list)
         elif method == 'sift':
             last_image_list = []
             for image_idx in range(len(frame_list)):
                 last_image_list.append(frame_list[image_idx]['image'])
             fused_pose = sift_pose_fusion(last_poses_list, last_image_list)
         elif method == "rejection":
-            fused_pose = naive_rejection_pose_fusion(last_poses_list)
+            fused_pose = rejection_avg_pose_fusion(last_poses_list)
         else:
             mg.print_fail(PRINT_PREFIX, "Unknown fusion method entered!")
 
