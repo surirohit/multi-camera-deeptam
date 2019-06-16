@@ -14,7 +14,7 @@ from deeptam_tracker.evaluation.metrics import rgbd_rpe
 from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_array_to_colorimg
 from deeptam_tracker.utils.parser import load_camera_config_yaml
 from deeptam_tracker.utils import message as mg
-
+from deeptam_tracker.utils.datatypes import Pose_identity
 from multicam_tracker.utils.parser import write_tum_trajectory_file
 
 PRINT_PREFIX = '[MAIN]: '
@@ -43,7 +43,6 @@ def parse_args():
     # Retrieve arguments
     args = parser.parse_args()
     return args
-
 
 def init_visualization(enable_gt, title='DeepTAM Tracker'):
     """Initializes a simple visualization for tracking
@@ -107,9 +106,9 @@ def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual,
                  label='Prediction')
 
     if enable_gt:
-        axes[0].plot(np.array([x.t[0] for x in gt_poses_c2w]),
-                    np.array([x.t[1] for x in gt_poses_c2w]),
-                    np.array([x.t[2] for x in gt_poses_c2w]),
+        axes[0].plot(np.array([x.t[0] for x in gt_poses_c2w if (x.t[0]!=0 and x.t[1]!=0 and x.t[2]!=0)]),
+                    np.array([x.t[1] for x in gt_poses_c2w if (x.t[0]!=0 and x.t[1]!=0 and x.t[2]!=0)]),
+                    np.array([x.t[2] for x in gt_poses_c2w if (x.t[0]!=0 and x.t[1]!=0 and x.t[2]!=0)]),
                     'g',
                     label='Ground truth')
 
@@ -224,7 +223,7 @@ def track_rgbd_sequence(checkpoint, config, tracking_module_path, visualization,
     tracker.clear()
     # WIP: If gt_poses is aligned such that it starts from identity pose, you may comment this line
     # TODO: @Rohit, should we make this base-to-cam transformation?
-    tracker.set_init_pose(pose0_gt)
+    tracker.set_init_pose(Pose_identity())
 
     ## track a sequence
     result = {}

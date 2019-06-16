@@ -77,6 +77,64 @@ def sift_pose_fusion(cams_poses, images_list):
     return convert_between_c2w_w2c(fused_pose_c2w)
 
 
+def sift_depth_pose_fusion(cams_poses, images_list, depths_list):
+    '''
+    Averages the input poses of each camera provided in the list based on features density
+    and homogeneity of the depth images
+
+    :param cams_poses: list of poses for each camera
+    :param images_list: list of images from each camera
+    :param depths_list: list of depth images from each camera
+    :return: pose after fusion
+    '''
+    assert isinstance(images_list, list)
+    assert isinstance(depths_list, list)
+    assert isinstance(cams_poses, list)
+    assert (len(cams_poses) == len(images_list))
+    assert (len(cams_poses) == len(depths_list))
+
+    ## SIFT feature detection
+    sift_weights = []
+    sift = cv2.xfeatures2d.SIFT_create()
+    for image in images_list:
+        im = np.array(convert_array_to_colorimg(image.squeeze()))
+        kp = sift.detect(im, None)
+        sift_weights.append(len(kp))
+
+    sift_weights = np.asarray(sift_weights)
+    sift_weights = sift_weights / sift_weights.sum()
+
+    depth_weights = []
+    for depth in depths_list:
+        depth_weights.append(np.nanstd(depth))
+    depth_weights = np.asarray(depth_weights)
+    depth_weights = depth_weights / depth_weights.sum()
+
+    c1 = 0.5
+    c2 = 0.5
+    feat_weights = []
+    for weight_idx in range(sift_weights.shape[0]):
+        feat_weights.append(c1*sift_weights[weight_idx] + c2*depth_weights[weight_idx])
+    feat_weights = np.asarray(feat_weights)
+    feat_weights = feat_weights / feat_weights.sum()
+
+    trans = []
+    orientation_aa = []
+    for cam_num in range(len(cams_poses)):
+        # transform pose to the world frame
+        pose_c2w = convert_between_c2w_w2c(cams_poses[cam_num])
+        # append to the list
+        trans.append(np.array(pose_c2w.t))
+        orientation_aa.append(rotation_matrix_to_angleaxis(pose_c2w.R))
+
+    # naive approach by taking average
+    t = np.average(trans, axis=0, weights=feat_weights)
+    R = angleaxis_to_rotation_matrix(Vector3(np.average(orientation_aa, axis=0, weights=feat_weights)))
+    fused_pose_c2w = Pose(R=Matrix3(R), t=Vector3(t))
+
+    return convert_between_c2w_w2c(fused_pose_c2w)
+
+
 def rejection_avg_pose_fusion(cams_poses, amt_dev=1.4):
     '''
     Averages the input poses of each camera provided in the list based on pose(translation only) acceptability

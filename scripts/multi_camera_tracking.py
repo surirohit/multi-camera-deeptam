@@ -9,7 +9,8 @@ from deeptam_tracker.utils import message as mg
 from multicam_tracker.utils.parser import load_multi_cam_config_yaml, write_tum_trajectory_file
 from multicam_tracker.multicam_tracker import MultiCamTracker
 from multicam_tracker.utils.visualizer import Visualizer
-from multicam_tracker.pose_fusion import naive_avg_pose_fusion, sift_pose_fusion, rejection_avg_pose_fusion
+from multicam_tracker.pose_fusion import naive_avg_pose_fusion, sift_pose_fusion
+from multicam_tracker.pose_fusion import sift_depth_pose_fusion, rejection_avg_pose_fusion
 
 PRINT_PREFIX = '[MAIN]: '
 
@@ -43,16 +44,16 @@ def parse_args():
 
 def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir, method):
     """Tracks a multicam rgbd sequence using deeptam tracker
-    
+
     checkpoint: str
         directory to the weights
-    
+
     config: dict
         dictionary containing the list of camera config files
 
     tracking_module_path: str
         file which contains the model class
-        
+
     visualization: bool
 
 
@@ -85,7 +86,6 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     except KeyError:
         camera_ref_idx = 0
 
-
     # Putting in higher scope so that don't need to call function again after loop
     pr_poses_list = None
     fused_poses = []
@@ -111,6 +111,13 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
             for image_idx in range(len(frame_list)):
                 last_image_list.append(frame_list[image_idx]['image'])
             fused_pose = sift_pose_fusion(last_poses_list, last_image_list)
+        elif method == 'sift_depth':
+            last_image_list = []
+            last_depth_list = []
+            for image_idx in range(len(frame_list)):
+                last_image_list.append(frame_list[image_idx]['image'])
+                last_depth_list.append(frame_list[image_idx]['depth'])
+            fused_pose = sift_depth_pose_fusion(last_poses_list, last_image_list, last_depth_list)
         elif method == "rejection":
             fused_pose = rejection_avg_pose_fusion(last_poses_list)
         else:
