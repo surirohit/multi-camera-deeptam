@@ -1,7 +1,6 @@
 import os
 import argparse
 import matplotlib.pyplot as plt
-import numpy as np
 
 import deeptam_tracker.models.networks
 from deeptam_tracker.evaluation.metrics import rgbd_rpe, rgbd_ate
@@ -10,6 +9,7 @@ from deeptam_tracker.utils import message as mg
 from multicam_tracker.utils.parser import load_multi_cam_config_yaml, write_tum_trajectory_file
 from multicam_tracker.multicam_tracker import MultiCamTracker
 from multicam_tracker.utils.visualizer import Visualizer
+from multicam_tracker.pose_fusion import naive_pose_fusion, sift_pose_fusion, naive_rejection_pose_fusion
 
 PRINT_PREFIX = '[MAIN]: '
 
@@ -35,79 +35,6 @@ def parse_args():
     # Retrieve arguments
     args = parser.parse_args()
     return args
-
-
-def naive_pose_fusion(cams_poses):
-    '''
-    Averages the input poses of each camera provided in the list
-
-    :param cams_poses: list of poses for each camera
-    :return: pose after fusion
-    '''
-    from deeptam_tracker.utils.rotation_conversion import rotation_matrix_to_angleaxis, angleaxis_to_rotation_matrix
-    from deeptam_tracker.utils.datatypes import Vector3, Matrix3, Pose
-    from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c
-
-    trans = []
-    orientation_aa = []
-    for cam_num in range(len(cams_poses)):
-        # transform pose to the world frame
-        pose_c2w = convert_between_c2w_w2c(cams_poses[cam_num])
-        # append to the list
-        trans.append(np.array(pose_c2w.t))
-        orientation_aa.append(rotation_matrix_to_angleaxis(pose_c2w.R))
-
-    # naive approach by taking average
-    t = np.mean(trans, axis=0)
-    R = angleaxis_to_rotation_matrix(Vector3(np.mean(orientation_aa, axis=0)))
-    fused_pose_c2w = Pose(R=Matrix3(R), t=Vector3(t))
-
-    return convert_between_c2w_w2c(fused_pose_c2w)
-
-
-def sift_pose_fusion(cams_poses, images_list):
-    '''
-    Averages the input poses of each camera provided in the list based on features density
-
-    :param cams_poses: list of poses for each camera
-    :param images_list: list of images from each camera
-    :return: pose after fusion
-    '''
-    import cv2
-    from deeptam_tracker.utils.rotation_conversion import rotation_matrix_to_angleaxis, angleaxis_to_rotation_matrix
-    from deeptam_tracker.utils.datatypes import Vector3, Matrix3, Pose
-    from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_array_to_colorimg
-
-    assert isinstance(images_list, list)
-    assert isinstance(cams_poses, list)
-    assert (len(cams_poses) == len(images_list))
-
-    ## SIFT feature detection
-    feat_num = []
-    sift = cv2.xfeatures2d.SIFT_create()
-    for image in images_list:
-        im = np.array(convert_array_to_colorimg(image.squeeze()))
-        kp = sift.detect(im, None)
-        feat_num.append(len(kp))
-
-    feat_num = np.asarray(feat_num)
-    feat_weights = feat_num / feat_num.sum()
-
-    trans = []
-    orientation_aa = []
-    for cam_num in range(len(cams_poses)):
-        # transform pose to the world frame
-        pose_c2w = convert_between_c2w_w2c(cams_poses[cam_num])
-        # append to the list
-        trans.append(np.array(pose_c2w.t))
-        orientation_aa.append(rotation_matrix_to_angleaxis(pose_c2w.R))
-
-    # naive approach by taking average
-    t = np.average(trans, axis=0, weights=feat_weights)
-    R = angleaxis_to_rotation_matrix(Vector3(np.average(orientation_aa, axis=0, weights=feat_weights)))
-    fused_pose_c2w = Pose(R=Matrix3(R), t=Vector3(t))
-
-    return convert_between_c2w_w2c(fused_pose_c2w)
 
 
 def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
@@ -150,8 +77,8 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     except KeyError:
         camera_ref_idx = 0
 
-    # Specify method of fusion
-    method = 'naive'
+    # Specify method of fusion ("naive"/"sift"/"rejection")
+    method = 'rejection'
 
     # Putting in higher scope so that don't need to call function again after loop
     pr_poses_list = None
@@ -178,6 +105,8 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
             for image_idx in range(len(frame_list)):
                 last_image_list.append(frame_list[image_idx]['image'])
             fused_pose = sift_pose_fusion(last_poses_list, last_image_list)
+        elif method == "rejection":
+            fused_pose = naive_rejection_pose_fusion(last_poses_list)
         else:
             mg.print_fail(PRINT_PREFIX, "Unknown fusion method entered!")
 
