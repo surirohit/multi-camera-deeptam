@@ -94,7 +94,7 @@ def add_sim_args(parser):
                         help='Collision forces enabled')
     parser.add_argument('-s', '--sensors',
                         action='append',
-                        choices=['normal', 'objectId', 'objectType', 'roomType', 'roomId', 'map','rightcamera','depthright'],
+                        choices=['normal', 'objectId', 'objectType', 'roomType', 'roomId', 'map','rightcamera','depthright','leftcamera','depthleft'],
                         default=[],
                         help='Additional sensors to enable')
     group = parser.add_mutually_exclusive_group()
@@ -196,7 +196,7 @@ def parse_sim_args(parser):
 
     if args.depth_noise:
         args.sensors = [{'name': 'depth', 'noise': True}]
-    args.observations = {'color': True, 'rightcamera': True, 'depthright': True, 'depth': args.depth, 'forces': args.forces, 'audio': args.audio}
+    args.observations = {'color': True, 'rightcamera': True, 'depthright': True, 'leftcamera': True, 'depthleft': True, 'depth': args.depth, 'forces': args.forces, 'audio': args.audio}
     for s in args.sensors:
         args.observations[s] = True
     args.collision_detection = {'mode': args.collision_mode}
