@@ -97,6 +97,9 @@ __Input Arguments:__
 
 __Example:__ 
 
+* To download the SUNCG data with camera rig, download the zip file from [here](https://drive.google.com/open?id=19KEPRx_hSGu-oDUvotWAkko8fMcRvW91). Please copy the extracted 
+data to the `resources/data` directory.
+ 
 * To run DeepTAM with a multi camera setup with inlier-based averaging, run:
 ```bash
 cd scripts
