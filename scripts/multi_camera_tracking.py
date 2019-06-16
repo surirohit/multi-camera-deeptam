@@ -32,12 +32,16 @@ def parse_args():
                         default=None)
     parser.add_argument('--disable_vis', '-v', help='disable the frame-by-frame visualization for speed-up',
                         action='store_true')
+    parser.add_argument('--method', '-m', metavar='', help='type of method to use for performing pose fusion (naive/sift/rejection)',
+                        default='naive')
     # Retrieve arguments
     args = parser.parse_args()
+    # check arguments
+    assert args.method in ["naive", "sift", "rejection"]
     return args
 
 
-def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir):
+def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visualization, output_dir, method):
     """Tracks a multicam rgbd sequence using deeptam tracker
     
     checkpoint: str
@@ -54,6 +58,10 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
 
     output_dir: str
         directory path save the output data
+
+    method: str
+        specify method of fusion ("naive"/"sift"/"rejection")
+
     """
 
     ##################
@@ -77,8 +85,6 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     except KeyError:
         camera_ref_idx = 0
 
-    # Specify method of fusion ("naive"/"sift"/"rejection")
-    method = 'rejection'
 
     # Putting in higher scope so that don't need to call function again after loop
     pr_poses_list = None
@@ -176,7 +182,7 @@ def main(args):
     os.makedirs(output_dir, exist_ok=True)
 
     track_multicam_rgbd_sequence(checkpoint=checkpoint, config=config, tracking_module_path=tracking_module_path,
-                                 visualization=visualization, output_dir=output_dir)
+                                 visualization=visualization, output_dir=output_dir, method=args.method)
 
 
 if __name__ == "__main__":

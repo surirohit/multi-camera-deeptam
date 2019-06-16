@@ -97,14 +97,12 @@ __Input Arguments:__
 
 __Example:__ 
 
-* Download the AirSim dataset from [here](https://polybox.ethz.ch/index.php/s/Kpp7Nfa0AbCq8e1) and copy it into the `resources/data` directory. Ensure that the name of the 
-directory is `airsim`. 
-
-* To run DeepTAM with a multi camera setup, run:
+* To run DeepTAM with a multi camera setup with inlier-based averaging, run:
 ```bash
 cd scripts
 # run the python script
  python multi_camera_tracking.py \
-    --config_file ../resources/hyperparameters/airsim/airsim_config.yaml \
-    --weights ../resources/weights/deeptam_tracker_weights/snapshot-300000
+    --config_file ../resources/hyperparameters/suncg3cameras/suncg_config.yaml \
+    --weights ../resources/weights/deeptam_tracker_weights/snapshot-300000 \
+    --method rejection
 ```
