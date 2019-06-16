@@ -41,7 +41,7 @@ def naive_pose_fusion(cams_poses):
     '''
     Averages the input poses of each camera provided in the list
 
-    :param cams_poses: list of list of poses for each camera
+    :param cams_poses: list of poses for each camera
     :return: pose after fusion
     '''
     from deeptam_tracker.utils.rotation_conversion import rotation_matrix_to_angleaxis, angleaxis_to_rotation_matrix
@@ -60,6 +60,51 @@ def naive_pose_fusion(cams_poses):
     # naive approach by taking average
     t = np.mean(trans, axis=0)
     R = angleaxis_to_rotation_matrix(Vector3(np.mean(orientation_aa, axis=0)))
+    fused_pose_c2w = Pose(R=Matrix3(R), t=Vector3(t))
+
+    return convert_between_c2w_w2c(fused_pose_c2w)
+
+
+def sift_pose_fusion(cams_poses, images_list):
+    '''
+    Averages the input poses of each camera provided in the list based on features density
+
+    :param cams_poses: list of poses for each camera
+    :param images_list: list of images from each camera
+    :return: pose after fusion
+    '''
+    import cv2
+    from deeptam_tracker.utils.rotation_conversion import rotation_matrix_to_angleaxis, angleaxis_to_rotation_matrix
+    from deeptam_tracker.utils.datatypes import Vector3, Matrix3, Pose
+    from deeptam_tracker.utils.vis_utils import convert_between_c2w_w2c, convert_array_to_colorimg
+
+    assert isinstance(images_list, list)
+    assert isinstance(cams_poses, list)
+    assert (len(cams_poses) == len(images_list))
+
+    ## SIFT feature detection
+    feat_num = []
+    sift = cv2.xfeatures2d.SIFT_create()
+    for image in images_list:
+        im = np.array(convert_array_to_colorimg(image.squeeze()))
+        kp = sift.detect(im, None)
+        feat_num.append(len(kp))
+
+    feat_num = np.asarray(feat_num)
+    feat_weights = feat_num / feat_num.sum()
+
+    trans = []
+    orientation_aa = []
+    for cam_num in range(len(cams_poses)):
+        # transform pose to the world frame
+        pose_c2w = convert_between_c2w_w2c(cams_poses[cam_num])
+        # append to the list
+        trans.append(np.array(pose_c2w.t))
+        orientation_aa.append(rotation_matrix_to_angleaxis(pose_c2w.R))
+
+    # naive approach by taking average
+    t = np.average(trans, axis=0, weights=feat_weights)
+    R = angleaxis_to_rotation_matrix(Vector3(np.average(orientation_aa, axis=0, weights=feat_weights)))
     fused_pose_c2w = Pose(R=Matrix3(R), t=Vector3(t))
 
     return convert_between_c2w_w2c(fused_pose_c2w)
@@ -105,9 +150,11 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
     except KeyError:
         camera_ref_idx = 0
 
+    # Specify method of fusion
+    method = 'naive'
+
     # Putting in higher scope so that don't need to call function again after loop
     pr_poses_list = None
-    frame_list = None
     fused_poses = []
 
     ####################
@@ -118,11 +165,23 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
         print(PRINT_PREFIX, 'Input frame number: {}'.format(frame_idx))
         pr_poses_list, gt_poses_list, frame_list, result_list = multicam_tracker.update(frame_idx)
 
-        # perform pose fusion
+        # retieve the last predicted poses from the tracker
         last_poses_list = []
         for pr_poses in pr_poses_list:
             last_poses_list.append(pr_poses[-1])
-        fused_poses.append(naive_pose_fusion(last_poses_list))
+
+        # perform pose fusion
+        if method == 'naive':
+            fused_pose = naive_pose_fusion(last_poses_list)
+        elif method == 'sift':
+            last_image_list = []
+            for image_idx in range(len(frame_list)):
+                last_image_list.append(frame_list[image_idx]['image'])
+            fused_pose = sift_pose_fusion(last_poses_list, last_image_list)
+        else:
+            mg.print_fail(PRINT_PREFIX, "Unknown fusion method entered!")
+
+        fused_poses.append(fused_pose)
 
         if visualization:
             viz.update(frame_list, pr_poses_list=pr_poses_list, fused_poses=fused_poses,
@@ -161,6 +220,7 @@ def track_multicam_rgbd_sequence(checkpoint, config, tracking_module_path, visua
 
     # final visualization
     viz.update(frame_list, pr_poses_list=pr_poses_list, fused_poses=fused_poses, gt_poses=gt_poses_list[camera_ref_idx])
+    viz.save_trajectory_plot(os.path.join(output_dir, 'traj_plot_%s.png' % method))
     plt.show()
 
     multicam_tracker.delete_tracker()

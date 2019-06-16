@@ -33,7 +33,8 @@ INSTALL_REQUIRES = [
     'scikit-image==0.14.2',
     'tensorflow-gpu==1.9.0',
     'opencv-python',
-    'pillow==6.0.0'
+    'pillow==6.0.0',
+    'opencv-contrib-python==3.4.2.16'
 ]
 
 # List of packages to install

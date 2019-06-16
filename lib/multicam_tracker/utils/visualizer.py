@@ -126,4 +126,8 @@ class Visualizer:
 
         plt.pause(1e-9)
 
+    def save_trajectory_plot(self, filename):
+        traj_extent = self.axs[0].get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+        # Pad the saved area by 50% in the x-direction and 20% in the y-direction
+        self.fig.savefig(filename, bbox_inches=traj_extent.expanded(1.5, 1.2))
 # EOF
