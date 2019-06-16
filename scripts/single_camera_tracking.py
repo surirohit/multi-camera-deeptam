@@ -107,9 +107,9 @@ def update_visualization(axes, pr_poses, gt_poses, image_cur, image_cur_virtual,
                  label='Prediction')
 
     if enable_gt:
-        axes[0].plot(np.array([x.t[0] for x in gt_poses_c2w]),
-                    np.array([x.t[1] for x in gt_poses_c2w]),
-                    np.array([x.t[2] for x in gt_poses_c2w]),
+        axes[0].plot(np.array([x.t[0] for x in gt_poses_c2w if x.t[0]!=0]),
+                    np.array([x.t[1] for x in gt_poses_c2w if x.t[1]!=0]),
+                    np.array([x.t[2] for x in gt_poses_c2w if x.t[2]!=0]),
                     'g',
                     label='Ground truth')
 
