@@ -102,6 +102,8 @@ def display_response(response, display_surf, camera_outputs,
     depth_img = None
     right_image = None
     rightdepth_img = None
+    left_image = None
+    leftdepth_img = None
 
     def printable(x): return type(x) is not bytearray and type(x) is not np.ndarray
     if observation is not None and print_observation:
@@ -166,6 +168,23 @@ def display_response(response, display_surf, camera_outputs,
             img *= DEPTH_SCALING_FACTOR#(255.0 / MAX_DEPTH_SENSOR) # rescaling for visualization
             img = img.astype(np.uint16)
             rightdepth_img = img
+        elif obs == 'depthleft': # TODO: this is the place where we need to calculate TOF
+            # depth central crop
+            if save_toc:
+                # Clip
+                img = np.clip(img, 0.1 , MAX_DEPTH_SENSOR)
+                #changed
+                height, width = img.shape[0], img.shape[1]
+                crop_d_img = img[height//2 - patch_len//2: height//2 + patch_len//2,
+                                  width//2 - patch_len//2: width//2 + patch_len//2]
+                toc = np.mean(crop_d_img) # Assume the object is moving at 1m/s
+                toc = round(toc, 2)
+                #print("Time of contact is: {:.2f}".format(toc))
+            img_small=img*(255.0 / MAX_DEPTH_SENSOR)
+            img_small=img_small.astype(np.uint8)
+            img *= DEPTH_SCALING_FACTOR#(255.0 / MAX_DEPTH_SENSOR) # rescaling for visualization
+            img = img.astype(np.uint16)
+            leftdepth_img = img
 
 
         elif img_viz is not None:
@@ -187,13 +206,20 @@ def display_response(response, display_surf, camera_outputs,
                     VIDEO_WRITER.add_frame(np.dstack([img, img, img]))  # yyy
                 else:
                     VIDEO_WRITER.add_frame(img[:, :, :-1])  # rgb
+        elif obs == 'leftcamera':
+            left_image = img # rgb
+            if write_video and VIDEO_WRITER:
+                if len(img.shape) == 2:
+                    VIDEO_WRITER.add_frame(np.dstack([img, img, img]))  # yyy
+                else:
+                    VIDEO_WRITER.add_frame(img[:, :, :-1])  # rgb
 
     if 'audio' in sensor_data:
         audio_data = sensor_data['audio']['data']
         pygame.sndarray.make_sound(audio_data).play()
         # pygame.mixer.Sound(audio_data).play()
 
-    return toc, color_img, right_image, depth_img, rightdepth_img
+    return toc, left_image, color_img, right_image, leftdepth_img, depth_img, rightdepth_img
 
 def ensure_size(display_surf, rw, rh):
     w = display_surf.get_width()
@@ -255,7 +281,7 @@ def interactive_loop(sim, args):
     # Set up display
     font_spacing = 20
     display_height = args.height + font_spacing*3
-    all_camera_observations = ['color', 'rightcamera','depthright', 'depth', 'normal', 'objectId', 'objectType', 'roomId', 'roomType']
+    all_camera_observations = ['leftcamera','color', 'rightcamera','depthleft','depth','depthright',  'normal', 'objectId', 'objectType', 'roomId', 'roomType']
     label_positions = {
         'curr': {},
         'goal': {}
@@ -394,7 +420,7 @@ def interactive_loop(sim, args):
                 sim.episode_info = sim.reset()
         else:
             # Figure out action
-            action = {'name': 'idle', 'strength': 100, 'angle': math.radians(5)}
+            action = {'name': 'idle', 'strength': 50, 'angle': math.radians(5)}
             actions = []
             action_names = []
             if replay:
@@ -494,19 +520,36 @@ def interactive_loop(sim, args):
             blit_img_to_surf(img, display_surf, config.get('position'), surf_key='map')
 
         # Handle other response
-        toc, color_img, right_image, depth_img, rightdepth_img = display_response(response, display_surf, camera_outputs['curr'],
+        toc, left_image, color_img, right_image, leftdepth_img, depth_img, rightdepth_img = display_response(response, display_surf, camera_outputs['curr'],
                                args.patch_len, args.save_toc,
                                print_observation=print_next_observation, write_video=True)
         if toc and prev_toc != toc and toc>0:# and last_good_action != 'idle':
-            frame_fname = os.path.join(image_folder, "colorleft_{:05d}.png".format(len(tocs)))
+            frame_fname = os.path.join(image_folder, "colorcenter_{:05d}.png".format(len(tocs)))
             right_frame_fname = os.path.join(image_folder, "colorright_{:05d}.png".format(len(tocs)))
-            depth_fname = os.path.join(image_folder, "depthleft_{:05d}.png".format(len(tocs)))
+            left_frame_fname = os.path.join(image_folder, "colorleft_{:05d}.png".format(len(tocs)))
+            depth_fname = os.path.join(image_folder, "depthcenter_{:05d}.png".format(len(tocs)))
             rightdepth_fname = os.path.join(image_folder, "depthright_{:05d}.png".format(len(tocs)))
+            leftdepth_fname = os.path.join(image_folder, "depthleft_{:05d}.png".format(len(tocs)))
             # Save image and append toc
+
+            temp_width = color_img.shape[0]
+            temp_height = color_img.shape[1]
+            color_img = np.reshape(color_img, [temp_height, temp_width, 4])
+            left_image= np.reshape(left_image, [temp_height, temp_width, 4])
+            right_image= np.reshape(right_image, [temp_height, temp_width, 4])
+            leftdepth_img = np.reshape(leftdepth_img, [temp_height, temp_width])
+            rightdepth_img = np.reshape(rightdepth_img,[temp_height, temp_width])
+            depth_img = np.reshape(depth_img,[temp_height, temp_width])
+
+
+
+
             cv2.imwrite(frame_fname,
                         cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR))
             cv2.imwrite(right_frame_fname,
                         cv2.cvtColor(right_image, cv2.COLOR_RGB2BGR))
+            cv2.imwrite(left_frame_fname,
+                        cv2.cvtColor(left_image, cv2.COLOR_RGB2BGR))
             # Check
             # cv2.imwrite(frame_fname,color_img)
             # cv2.imwrite(right_frame_fname,color_img)
@@ -525,6 +568,7 @@ def interactive_loop(sim, args):
 
             cv2.imwrite(depth_fname, depth_img)
             cv2.imwrite(rightdepth_fname, rightdepth_img)
+            cv2.imwrite(leftdepth_fname, leftdepth_img)
             #print("saving!")
         pygame.display.flip()
         num_frames += 1
@@ -608,6 +652,12 @@ def main():
     parser.add_argument('--depthright',
                        default='True',
                        help='Right camera setting')
+    parser.add_argument('--leftcamera',
+                       default='True',
+                       help='Left camera setting')
+    parser.add_argument('--depthleft',
+                       default='True',
+                       help='Left camera setting')
     parser.add_argument('--replay_mode',
                        choices=REPLAY_MODES,
                        default='positions',
