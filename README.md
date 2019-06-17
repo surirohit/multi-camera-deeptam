@@ -5,7 +5,7 @@ Visual Odometry methods based on classical 3D geometry have been around for year
 
 In this work, we extend the existing DeepTAM pipeline to leverage a multi-camera setup with known geometry. We demonstrate the generalizability of DeepTAM to other monocular setups and highlight the scenarios in which it performs poorly. We show the efficacy of our proposed multi-camera VO pipeline to receive better pose estimates using experiments based on simulation.
 
-__Contributors:__ [Mayank Mittal](http://mayankm96.github.io), [Rohit Suri](https://www.linkedin.com/in/rohit-suri-0966b0b3), Fadhil Ginting, Parker Ewen
+__Contributors:__ [Mayank Mittal](http://mayankm96.github.io), [Rohit Suri](https://www.linkedin.com/in/rohit-suri-0966b0b3), [Fadhil Ginting](https://ch.linkedin.com/in/mfadhilgtg), [Parker Ewen](https://ca.linkedin.com/in/parker-ewen-450640a6)
 
 <div style="text-align:center">
     <img src="docs/multi-vo-pipeline.png" alt="multi-cam-deeptam-pipeline" height="75%" width="75%"/>
