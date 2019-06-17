@@ -8,7 +8,7 @@ In this work, we extend the existing DeepTAM pipeline to leverage a multi-camera
 __Contributors:__ [Mayank Mittal](http://mayankm96.github.io), [Rohit Suri](https://www.linkedin.com/in/rohit-suri-0966b0b3), Fadhil Ginting, Parker Ewen
 
 <div style="text-align:center">
-    <img src="docs/multi-vo-pipeline.png" alt="multi-cam-deeptam-pipeline" height="75%" width="75%">
+    <img src="docs/multi-vo-pipeline.png" alt="multi-cam-deeptam-pipeline" height="75%" width="75%"/>
 </div>
 
 ---
@@ -104,7 +104,7 @@ __Input Arguments:__
 *  `--weights` or `-w`: set to the path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)
 *  `--tracking_network` or `-n`: set to the path of the tracking network (default: path to module deeptam_tracker.models.networks)
 *  `--disable_vis` or `-v`: disable the frame-by-frame visualization for speed-up
-*  `--method` or `-m`: type of pose fusion method to use (default: "rejection", options: "rejection"/"naive"/"sift")
+*  `--method` or `-m`: type of pose fusion method to use (default: `"rejection"`, options: `"rejection"`/`"naive"`/`"sift"`)
 
 __Example:__ 
 
