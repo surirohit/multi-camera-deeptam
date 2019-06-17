@@ -8,8 +8,10 @@ In this work, we extend the existing DeepTAM pipeline to leverage a multi-camera
 __Contributors:__ [Mayank Mittal](http://mayankm96.github.io), [Rohit Suri](https://www.linkedin.com/in/rohit-suri-0966b0b3), Fadhil Ginting, Parker Ewen
 
 <div style="text-align:center">
-    <img src="docs/multi-vo-pipeline.png" alt="multi-cam-deeptam-pipeline">
+    <img src="docs/multi-vo-pipeline.png" alt="multi-cam-deeptam-pipeline" height="75%" width="75%">
 </div>
+
+---
 
 This code has been tested on a computer with following specifications:
 * __OS Platform and Distribution:__ Linux Ubuntu 16.04LTS
