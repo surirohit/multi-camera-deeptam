@@ -1,7 +1,11 @@
 
 # Multi-Camera DeepTAM
 
-Project for the course on 3D Vision at ETH Zurich
+Visual Odometry methods based on classical 3D geometry have been around for years, using either indirect feature matching or direct visual error minimization. Lately,learning-based methods that combine both matching and geometry estimation in a single network have achieved impressive results. One such method is DeepTAM. Further, it has been shown that classical methods benefit from the extended field of view provided by using multiple cameras. However, these setups have been ignored by current learning-based methods. 
+
+In this work, we extend the existing DeepTAM pipeline to leverage a multi-camera setup with known geometry. We demonstrate the generalizability of DeepTAM to other monocular setups and highlight the scenarios in which it performs poorly. We show the efficacy of our proposed multi-camera VO pipeline to receive better pose estimates using experiments based on simulation.
+
+__Contributors:__ [Mayank Mittal](http://mayankm96.github.io), [Rohit Suri](https://www.linkedin.com/in/rohit-suri-0966b0b3), Fadhil Ginting, Parker Ewen
 
 This code has been tested on a computer with following specifications:
 * __OS Platform and Distribution:__ Linux Ubuntu 16.04LTS
@@ -94,6 +98,7 @@ __Input Arguments:__
 *  `--weights` or `-w`: set to the path for the weights of the DeepTAM tracking network (without the .index, .meta or .data extensions)
 *  `--tracking_network` or `-n`: set to the path of the tracking network (default: path to module deeptam_tracker.models.networks)
 *  `--disable_vis` or `-v`: disable the frame-by-frame visualization for speed-up
+*  `--method` or `-m`: type of pose fusion method to use (default: "rejection", options: "rejection"/"naive"/"sift")
 
 __Example:__ 
 
